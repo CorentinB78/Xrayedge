@@ -257,16 +257,16 @@ def test_cum_semiinf_adpat_simpson():
 
 class PhysicsParameters:
 
-    def __init__(self):
-        self.beta = 1.
-        self.mu_d = 0. # chemical potential on the QD TODO: remove if redondant with eps_d
-        self.bias = 0.
-        self.capac_inv = 1. # = dV/dQ
-        self.eps_d = 0. # on the QD
-        self.eps_c = 0. # on the QPC
-        self.mu_c = 0.
-        self.Gamma = 1.
-        self.U = 0.
+    def __init__(self, beta=1., mu_d=0., bias=0., V_cap=1., eps_d=0., eps_c=0., mu_c=0., Gamma=1., U=0.):
+        self.beta = beta
+        self.mu_d = mu_d # chemical potential on the QD TODO: remove if redondant with eps_d
+        self.bias = bias
+        self.capac_inv = V_cap # = dV/dQ
+        self.eps_d = eps_d # on the QD
+        self.eps_c = eps_c # on the QPC
+        self.mu_c = mu_c
+        self.Gamma = Gamma
+        self.U = U
         
         # nr_channels = 4
         # lambda_phi = 1. # = capac ?
@@ -285,15 +285,19 @@ class AccuracyParameters:
     t0_interp_C: increase to increase precision. Timescale above which nr of samples of phi saturates.
     """
 
-    def __init__(self, physics_params):
+    def __init__(self, physics_params, fft_nr_samples=50000, fft_w_max=50., tol_C=1e-2, slopetol_C=1e-2, delta_interp_phi=0.05, method='trapz'):
+        """
+        methods available: trapz, cheb
+        fft_w_max is in unit of Gamma
+        """
         self.PP = copy(physics_params)
 
-        self.fft_nr_samples = 50000
-        self.fft_w_max = 50. # in unit of Gamma
-        self.tol_C = 1e-2,
-        self.slopetol_C = 1e-2,
-        self.delta_interp_phi = 0.05
-        self.method = 'trapz' # or 'cheb'
+        self.fft_nr_samples = fft_nr_samples
+        self.fft_w_max = fft_w_max # in unit of Gamma
+        self.tol_C = tol_C
+        self.slopetol_C = slopetol_C
+        self.delta_interp_phi = delta_interp_phi
+        self.method = method
 
 
     def omegas_fft(self):
