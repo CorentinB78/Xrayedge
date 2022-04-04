@@ -281,15 +281,12 @@ class PhysicsParameters:
     
 class AccuracyParameters:
     """
+    methods available: trapz, cheb
+    fft_w_max is in unit of Gamma
     delta_interp_phi: reduce to increase precision. Should be smaller than timescale of variation of bare g.
-    t0_interp_C: increase to increase precision. Timescale above which nr of samples of phi saturates.
     """
 
     def __init__(self, physics_params, fft_nr_samples=50000, fft_w_max=50., tol_C=1e-2, slopetol_C=1e-2, delta_interp_phi=0.05, method='trapz'):
-        """
-        methods available: trapz, cheb
-        fft_w_max is in unit of Gamma
-        """
         self.PP = copy(physics_params)
 
         self.fft_nr_samples = fft_nr_samples
