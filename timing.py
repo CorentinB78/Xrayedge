@@ -14,9 +14,10 @@ PP.mu_c = 0.
 PP.Gamma = 1.
 PP.capac_inv = 5. # = dV/dQ
 
-times = np.linspace(0, 50, 5000)
+tmax = 30.
 
 AP = xray.AccuracyParameters(PP,
+                            time_extrapolate=tmax,
                             tol_C=1e-3,
                             delta_interp_phi=0.05,
                             fft_w_max=500.,
@@ -28,7 +29,7 @@ model = xray.NumericModel(PP, AP)
 start = time.time()
 start_full = time.process_time()
 
-tt, C, err = model.C(30., 0)
+err = model.compute_C(Q=0)
 
 full_run_time = time.process_time() - start_full
 run_time = time.time() - start
@@ -39,5 +40,6 @@ print()
 print(f"Error: {err}")
 print()
 
-plt.plot(tt, C.real)
+times = np.linspace(0., tmax, 300)
+plt.plot(times, model.C(0, times).real)
 plt.show()

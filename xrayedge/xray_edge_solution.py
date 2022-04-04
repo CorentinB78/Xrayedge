@@ -286,9 +286,10 @@ class AccuracyParameters:
     delta_interp_phi: reduce to increase precision. Should be smaller than timescale of variation of bare g.
     """
 
-    def __init__(self, physics_params, fft_nr_samples=50000, fft_w_max=50., tol_C=1e-2, slopetol_C=1e-2, delta_interp_phi=0.05, method='trapz'):
+    def __init__(self, physics_params, time_extrapolate, fft_nr_samples=50000, fft_w_max=50., tol_C=1e-2, slopetol_C=1e-2, delta_interp_phi=0.05, method='trapz'):
         self.PP = copy(physics_params)
 
+        self.time_extrapolate = time_extrapolate
         self.fft_nr_samples = fft_nr_samples
         self.fft_w_max = fft_w_max # in unit of Gamma
         self.tol_C = tol_C
@@ -341,7 +342,7 @@ class GFModel:
 
     def __init__(self, physics_params=None, accuracy_params=None):
         self.PP = copy(physics_params) if physics_params is not None else PhysicsParameters()
-        self.AP = copy(accuracy_params) if accuracy_params is not None else AccuracyParameters(self.PP)
+        self.AP = copy(accuracy_params) if accuracy_params is not None else AccuracyParameters(self.PP, 1.)
     
     def weight(self, Q_up, Q_dn):
         return np.exp(-self.PP.beta * ((self.PP.eps_d - self.PP.mu_d) * (Q_up + Q_dn) + Q_up * Q_dn * self.PP.U))
@@ -394,60 +395,75 @@ class NumericModel(GFModel):
     
     def __init__(self, *args, **kwargs):
         super(NumericModel, self).__init__(*args, **kwargs)
-        self._g_less_t = {}
-        self._g_grea_t = {}
+        self._cache_g_less_t = [None] * 2
+        self._cache_g_grea_t = [None] * 2
+        self._cache_C_interp = [None] * 2
+        self._cache_C_tail = [None] * 2
 
-
-    def A_plus(self, t_array, Q):
-        # TODO: is boundary condition a problem if steady state not reached?
-        times, C_vals, err = self.C(t_array[-1], Q, extend=False)
-        C_interp = interpolate.CubicSpline(times, C_vals, bc_type='natural', extrapolate=False)
-
-        return np.exp(C_interp(t_array))
+    def A_plus(self, Q, times):
+        return np.exp(self.C(Q, times))
         
-    def A_plus_reta_w(self, Q, time_max, nr_freqs):
+    def A_plus_reta_w(self, Q, nr_freqs):
         """
         Returns: freqs, A, energy shift.
         """
-        times, C, err = self.C(time_max, Q, extend=False)
+        if self._cache_C_tail[Q] is None:
+            self.compute_C(Q)
 
-        slope = (C[-1] - C[-2]) / (times[-1] - times[-2])
-        intercept = C[-1] - slope * times[-1]
+        slope = self._cache_C_tail[Q][1]
         
-        ### compute A and fourier transform
-        tt_full = np.linspace(0, 200. / np.abs(slope.real), nr_freqs)
-        C_full = interpolate.CubicSpline(*tb.symmetrize(times, C, 0., lambda x: np.conj(x)), bc_type='natural')(tt_full)
-
-        # replace tails
-        mask = tt_full >= times[-1]
-        C_full[mask] = intercept.real + tt_full[mask] * slope.real
-        C_full[mask] += 1j * (intercept.imag + tt_full[mask] * slope.imag)
+        times = np.linspace(0, 200. / np.abs(slope.real), nr_freqs)
+        C_vals = self.C(Q, times)
 
         # shift energy
-        C_full -= 1j * tt_full * slope.imag
+        C_vals -= 1j * times * slope.imag
 
-        A = np.exp(C_full)
+        A = np.exp(C_vals)
         A[0] *= 0.5
-        w, A = tb.fourier_transform(tt_full, A)
+        w, A = tb.fourier_transform(times, A)
 
         return w, A, -slope.imag
 
-    def A_minus(self, t_array, Q):
+    def A_minus(self, Q, times):
         self.PP.capac_inv *= -1
 
-        times, C_vals, err = self.C(t_array[-1], Q + 1, extend=False)
-        C_interp = interpolate.CubicSpline(times, C_vals, bc_type='natural', extrapolate=False)
-        out = np.exp(C_interp(t_array))
+        C_vals = self.C(Q + 1, times)
+        out = np.exp(C_vals)
 
         self.PP.capac_inv *= -1
         return out
  
-    def C(self, t_scale, Q, extend=True):
-        times, C_vals, err = cum_semiinf_adpat_simpson(lambda t: self.phi(t, Q), scale=t_scale, tol=self.AP.tol_C, slopetol=self.AP.slopetol_C, extend=extend)
+    def compute_C(self, Q):
+        """
+        Fills cache and returns error estimate.
+        """
+        times, C_vals, err = cum_semiinf_adpat_simpson(lambda t: self.phi(t, Q), scale=self.AP.time_extrapolate, tol=self.AP.tol_C, slopetol=self.AP.slopetol_C, extend=False)
         C_vals *= self.PP.capac_inv
         err *= np.abs(self.PP.capac_inv)
 
-        return times, C_vals, err
+        slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
+        intercept = C_vals[-1] - slope * times[-1]
+        
+        C_interp = interpolate.CubicSpline(*tb.symmetrize(times, C_vals, 0., lambda x: np.conj(x)), bc_type='natural', extrapolate=False)
+        self._cache_C_interp[Q] = C_interp
+        self._cache_C_tail[Q] = (intercept, slope)
+
+        return err
+
+    def C(self, Q, times):
+        times = np.asarray(times)
+        if self._cache_C_interp[Q] is None:
+            self.compute_C(Q)
+
+        C_vals = self._cache_C_interp[Q](times)
+        mask = np.abs(times) >= self.AP.time_extrapolate
+
+        if mask.any():
+            intercept, slope = self._cache_C_tail[Q]
+            tt = times[mask]
+            C_vals[mask] = intercept.real + np.abs(tt) * slope.real + 1j * (np.sign(tt) * intercept.imag + tt * slope.imag)
+
+        return C_vals
     
     ######## phi #######
     
@@ -481,26 +497,26 @@ class NumericModel(GFModel):
         return np.abs(self.g_reta(w_array, Q))**2 * (0.5 * self.delta_leads_K(w_array) + 1.j * np.imag(self.delta_leads_R(w_array)))
     
     def g_less_t_fun(self, Q):
-        Q = float(Q)
-        if Q not in self._g_less_t:
+        Q = int(Q)
+        if self._cache_g_less_t[Q] is None:
             g_less = self.g_less(self.AP.omegas_fft(), Q=Q)
 
             times, g_less_t = tb.inv_fourier_transform(self.AP.omegas_fft(), g_less)
             
-            self._g_less_t[Q] = interpolate.CubicSpline(times, g_less_t)
+            self._cache_g_less_t[Q] = interpolate.CubicSpline(times, g_less_t)
         
-        return self._g_less_t[Q]
+        return self._cache_g_less_t[Q]
 
     def g_grea_t_fun(self, Q):
-        Q = float(Q)
-        if Q not in self._g_grea_t:
+        Q = int(Q)
+        if self._cache_g_grea_t[Q] is None:
             g_grea = self.g_grea(self.AP.omegas_fft(), Q=Q)
 
             times, g_grea_t = tb.inv_fourier_transform(self.AP.omegas_fft(), g_grea)
             
-            self._g_grea_t[Q] = interpolate.CubicSpline(times, g_grea_t)
+            self._cache_g_grea_t[Q] = interpolate.CubicSpline(times, g_grea_t)
 
-        return self._g_grea_t[Q]
+        return self._cache_g_grea_t[Q]
 
 
 def test_model():
@@ -519,14 +535,15 @@ def test_model():
     
 def test_model_methods():
     model = NumericModel()
-    times = np.linspace(0, 10, 20)
+    model.AP.time_extrapolate = 10.
+    times = np.linspace(0., 10., 20)
     Q = 0
 
     model.AP.method = 'cheb'
-    Ap_cheb = model.A_plus(times, Q)
+    Ap_cheb = model.A_plus(Q, times)
 
     model.AP.method = 'trapz'
-    Ap_trapz = model.A_plus(times, Q)
+    Ap_trapz = model.A_plus(Q, times)
 
     np.testing.assert_allclose(Ap_cheb, Ap_trapz, atol=1e-2, rtol=1e-2)
 
@@ -540,7 +557,7 @@ def test_nonreg():
     PP.Gamma = 1.0
     PP.U = 0.0
 
-    AP = AccuracyParameters(PP)
+    AP = AccuracyParameters(PP, time_extrapolate=10.)
     AP.method = 'trapz'
     AP.fft_w_max = 100.
     AP.fft_nr_samples = 100000
@@ -549,10 +566,9 @@ def test_nonreg():
     AP.delta_interp_phi = 0.05
 
     model = NumericModel(PP, AP)
-    times, C, err = model.C(1. / PP.Gamma, Q=0)
-    C_interp = interpolate.CubicSpline(times, C, bc_type='natural')
+    times = np.linspace(0., 10., 11)
+    C = model.C(0, times)
 
-    times_ref = np.arange(11, dtype=float)
     C_ref = np.array([ 0.        +0.j        , -0.05929683+0.54617968j,
        -0.1205964 +1.17053087j, -0.15432367+1.81127392j,
        -0.17699975+2.44931755j, -0.19732259+3.08517557j,
@@ -560,7 +576,7 @@ def test_nonreg():
        -0.25707505+4.99167134j, -0.27661209+5.62735788j,
        -0.29605259+6.26306652j])
 
-    np.testing.assert_allclose(C_interp(times_ref), C_ref, rtol=1e-3)
+    np.testing.assert_allclose(C, C_ref, rtol=1e-3)
 
 
     
