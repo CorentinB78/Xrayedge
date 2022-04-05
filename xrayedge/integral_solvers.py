@@ -202,8 +202,8 @@ def cum_semiinf_adpat_simpson(f, scale=1., tol=1e-8, slopetol=1e-8, extend=False
                 break # finished!
 
         # bulk segment
-        a1_estimate = (3 * y[i] + 6 * y[i + 1] - y[i + 2]) / 8.
-        a2_estimate = (3 * y[i + 2] + 6 * y[i + 1] - y[i]) / 8.
+        int1_estimate = (x[i+2] - x[i]) * (5 * y[i] + 8 * y[i+1] - y[i+2]) / 24.
+        int2_estimate = (x[i+2] - x[i]) * (5 * y[i+2] + 8 * y[i+1] - y[i]) / 24.
 
         a1 = (x[i] + x[i + 1]) / 2
         a2 = (x[i + 1] + x[i + 2]) / 2
@@ -214,7 +214,10 @@ def cum_semiinf_adpat_simpson(f, scale=1., tol=1e-8, slopetol=1e-8, extend=False
         y.insert(i + 3, f(a2))
         feval += 2
 
-        err = max(np.abs(y[i + 1] - a1_estimate), np.abs(y[i + 3] - a2_estimate))
+        int1 = (x[i+2] - x[i]) * (y[i] + 4 * y[i+1] + y[i+2]) / 6.
+        int2 = (x[i+4] - x[i+2]) * (y[i+2] + 4 * y[i+3] + y[i+4]) / 6.
+
+        err = max(np.abs(int1 - int1_estimate), np.abs(int2 - int2_estimate))
 
         if err < tol:
             i += 4 # go to next segment
@@ -252,6 +255,26 @@ def test_cum_semiinf_adpat_simpson():
     np.testing.assert_allclose(cum[i], ref, atol=1e-10)
     np.testing.assert_allclose(cum[i], ref, atol=err)
 
+def test_integral_gauss():
+    def f(x):
+        return np.exp(-x**2)
+
+    x_cum, cum, err = cum_semiinf_adpat_simpson(f, 10., tol=1e-10)
+    
+    ref = np.sqrt(np.pi) / 2.
+
+    np.testing.assert_allclose(cum[-1], ref, atol=1e-10)
+
+def test_integral_poly():
+    def f(x):
+        return x**3 - x**5
+
+    x_cum, cum, err = cum_semiinf_adpat_simpson(f, 2., tol=1e-10)
+    
+    ref = 4. - 32. / 3.
+
+    np.testing.assert_allclose(cum[-1], ref, atol=1e-10)
+
 
 if __name__ == "__main__":
     print("Running tests...")
@@ -259,4 +282,6 @@ if __name__ == "__main__":
     test_solve_pseudo_dyson_cheb()
     test_solve_pseudo_dyson_trapz()
     test_cum_semiinf_adpat_simpson()
+    test_integral_gauss()
+    test_integral_poly()
     print("Success.")

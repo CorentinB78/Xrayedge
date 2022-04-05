@@ -29,7 +29,7 @@ model = xray.NumericModel(PP, AP)
 start = time.time()
 start_full = time.process_time()
 
-err = model.compute_C(Q=0)
+err = model.compute_C(type=0, Q=0)
 
 full_run_time = time.process_time() - start_full
 run_time = time.time() - start
@@ -41,5 +41,5 @@ print(f"Error: {err}")
 print()
 
 times = np.linspace(0., tmax, 300)
-plt.plot(times, model.C(0, times).real)
+plt.plot(times, model.C(0, 0, times).real)
 plt.show()

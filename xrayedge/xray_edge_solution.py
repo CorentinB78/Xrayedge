@@ -2,7 +2,7 @@ import numpy as np
 from scipy import interpolate
 import toolbox as tb
 from copy import copy
-from integral_solvers import solve_pseudo_dyson, cum_semiinf_adpat_simpson
+from .integral_solvers import solve_pseudo_dyson, cum_semiinf_adpat_simpson
 
 # TODO write test against asymptotic result
 # TODO parallelize?
