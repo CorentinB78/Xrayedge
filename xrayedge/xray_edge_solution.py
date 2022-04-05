@@ -3,6 +3,7 @@ from scipy import integrate, linalg, interpolate
 from matplotlib import pyplot as plt
 import toolbox as tb
 from copy import copy
+import os
 
 # TODO write test against asymptotic result
 # TODO parallelize?
@@ -22,26 +23,33 @@ def test_cheb_points():
 
 
 ### loading Lagrange convolution integrals for the Chebychev method
-lagrange_integrals_less = [None, None]
-lagrange_integrals_grea = [None, None]
+# lagrange_integrals_less = [None, None]
+# lagrange_integrals_grea = [None, None]
 
 def load_lagrange_convol_integrals():
-    if len(lagrange_integrals_less) > 2 or len(lagrange_integrals_grea) > 2:
-        raise RuntimeError("Lagrange integrals have already been loaded.")
+    module_dir = os.path.dirname(__file__)
+
+    grea = [None, None]
+    less = [None, None]
 
     N = 2
     while True:
-
+        filename = os.path.join(module_dir, f'data/lagrange_convol_integrals_N={N}.npz')
         try:
-            with np.load(f'data/lagrange_convol_integrals_N={N}.npz') as data:
-                lagrange_integrals_grea.append(data['grea'])
-                lagrange_integrals_less.append(data['less'])
+            with np.load(filename) as data:
+                grea.append(data['grea'])
+                less.append(data['less'])
         except FileNotFoundError:
             break
 
         N += 1
+    
+    if N == 2:
+        raise FileNotFoundError("No Lagrange convol integrals file found.")
 
-load_lagrange_convol_integrals()
+    return grea, less
+
+lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integrals()
 
 
 def solve_pseudo_dyson(g_less, g_grea, t, V, N, method='cheb'):
@@ -317,6 +325,10 @@ def gen_params(accuracy_params):
     yield copy(accuracy_params), "original"
 
     params = copy(accuracy_params)
+    params.time_extrapolate *= 2.
+    yield params, "time_extrapolate"
+
+    params = copy(accuracy_params)
     params.tol_C *= 4.
     yield params, "tol_C"
 
@@ -348,46 +360,48 @@ class GFModel:
         return np.exp(-self.PP.beta * ((self.PP.eps_d - self.PP.mu_d) * (Q_up + Q_dn) + Q_up * Q_dn * self.PP.U))
 
     def Z_d(self):
+        """
+        Partition function
+        """
         return self.weight(0, 0) + self.weight(1, 0) + self.weight(0, 1) + self.weight(1, 1)
     
     def proba(self, Q_up, Q_dn):
         return self.weight(Q_up, Q_dn) / self.Z_d()
     
-    def A_plus(self, t_array, Q):
+    def A_plus(self, Q, t_array):
         raise NotImplementedError
 
-    def A_plus_w(self, Q, time_max, nr_freqs):
+    def A_plus_w(self, Q, nr_freqs):
         raise NotImplementedError
     
-    def A_minus(self, t_array, Q):
+    def A_minus(self, Q, t_array):
         raise NotImplementedError
     
     def G_grea(self, t_array):
         prefactor = -1j * np.exp(-1j * t_array * self.PP.eps_d)
-        out = self.proba(0, 0) * self.A_plus(t_array, 0)
-        out += np.exp(-1j * t_array * self.PP.U) * self.proba(0, 1) * self.A_plus(t_array, 1) 
+        out = self.proba(0, 0) * self.A_plus(0, t_array)
+        out += np.exp(-1j * t_array * self.PP.U) * self.proba(0, 1) * self.A_plus(1, t_array) 
         return prefactor * out
 
     def G_less(self, t_array):
         prefactor = 1j * np.exp(-1j * t_array * self.PP.eps_d)
-        out = self.proba(1, 0) * self.A_minus(t_array, 0)
-        out += np.exp(-1j * t_array * self.PP.U) * self.proba(1, 1) * self.A_minus(t_array, 1) 
+        out = self.proba(1, 0) * np.conj(self.A_minus(1, t_array))
+        out += np.exp(-1j * t_array * self.PP.U) * self.proba(1, 1) * np.conj(self.A_minus(2, t_array))
         return prefactor * out
 
     def G_grea_NCA_constraint(self, t_array):
         # no U in NCA constraint
-        return -1j * np.exp(-1j * t_array * self.PP.eps_d) * self.weight(0, 0) * self.A_plus(t_array, 0)
+        return -1j * np.exp(-1j * t_array * self.PP.eps_d) * self.weight(0, 0) * self.A_plus(0, t_array)
 
-    def G_less_NCA_constraint(self, t_array):
-        # no U in NCA constraint
-        return 1j * np.exp(-1j * t_array * self.PP.eps_d) * self.weight(1, 0) * self.A_minus(t_array, 0)
-
-    def G_reta_w_NCA_constraint(self, time_max, nr_freqs):
+    def G_reta_w_NCA_constraint(self, nr_freqs):
         """
+        For NCA in the steady state regime, one only needs the greater quaisparticle GFs in the sector Q=0 (see notes).
+        Also, the partition function is reduced to 1.
+
         Returns: freqs, G_grea, energy shift
         """
         # no U in NCA constraint
-        w, A_w, energy_shift = self.A_plus_reta_w(0, time_max, nr_freqs)
+        w, A_w, energy_shift = self.A_plus_reta_w(0, nr_freqs)
         return w, -1j * self.weight(0, 0) * A_w, energy_shift - self.PP.eps_d
 
 
@@ -395,25 +409,30 @@ class NumericModel(GFModel):
     
     def __init__(self, *args, **kwargs):
         super(NumericModel, self).__init__(*args, **kwargs)
-        self._cache_g_less_t = [None] * 2
-        self._cache_g_grea_t = [None] * 2
-        self._cache_C_interp = [None] * 2
-        self._cache_C_tail = [None] * 2
+        self.N = 3 # nr of different charge states affecting the QPC
+        self._cache_g_less_t = [None] * self.N
+        self._cache_g_grea_t = [None] * self.N
+        self._cache_C_interp = [[None] * self.N, [None] * self.N]
+        self._cache_C_tail = [[None] * self.N, [None] * self.N]
 
     def A_plus(self, Q, times):
-        return np.exp(self.C(Q, times))
+        return np.exp(self.C(0, Q, times))
         
+    def A_minus(self, Q, times):
+        return np.exp(self.C(1, Q, times))
+ 
     def A_plus_reta_w(self, Q, nr_freqs):
         """
         Returns: freqs, A, energy shift.
         """
-        if self._cache_C_tail[Q] is None:
-            self.compute_C(Q)
+        type = 0
+        if self._cache_C_tail[type][Q] is None:
+            self.compute_C(type, Q)
 
-        slope = self._cache_C_tail[Q][1]
+        slope = self._cache_C_tail[type][Q][1]
         
         times = np.linspace(0, 200. / np.abs(slope.real), nr_freqs)
-        C_vals = self.C(Q, times)
+        C_vals = self.C(type, Q, times)
 
         # shift energy
         C_vals -= 1j * times * slope.imag
@@ -424,54 +443,53 @@ class NumericModel(GFModel):
 
         return w, A, -slope.imag
 
-    def A_minus(self, Q, times):
-        self.PP.capac_inv *= -1
+    ######## C and phi #######
+    
+    def C(self, type, Q, times):
+        times = np.asarray(times)
+        if self._cache_C_interp[type][Q] is None:
+            self.compute_C(type, Q)
 
-        C_vals = self.C(Q + 1, times)
-        out = np.exp(C_vals)
+        C_vals = self._cache_C_interp[type][Q](times)
+        mask = np.abs(times) >= self.AP.time_extrapolate
 
-        self.PP.capac_inv *= -1
-        return out
- 
-    def compute_C(self, Q):
+        if mask.any():
+            intercept, slope = self._cache_C_tail[type][Q]
+            tt = times[mask]
+            C_vals[mask] = intercept.real + np.abs(tt) * slope.real + 1j * (np.sign(tt) * intercept.imag + tt * slope.imag)
+
+        return C_vals
+    
+    def compute_C(self, type, Q):
         """
         Fills cache and returns error estimate.
         """
-        times, C_vals, err = cum_semiinf_adpat_simpson(lambda t: self.phi(t, Q), scale=self.AP.time_extrapolate, tol=self.AP.tol_C, slopetol=self.AP.slopetol_C, extend=False)
-        C_vals *= self.PP.capac_inv
+        if type == 0:
+            sign = 1
+        elif type == 1:
+            sign = -1
+        else:
+            raise ValueError
+
+        times, C_vals, err = cum_semiinf_adpat_simpson(lambda t: self.phi(sign, Q, t), scale=self.AP.time_extrapolate, tol=self.AP.tol_C, slopetol=self.AP.slopetol_C, extend=False)
+        C_vals *= sign * self.PP.capac_inv
         err *= np.abs(self.PP.capac_inv)
 
         slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
         intercept = C_vals[-1] - slope * times[-1]
         
         C_interp = interpolate.CubicSpline(*tb.symmetrize(times, C_vals, 0., lambda x: np.conj(x)), bc_type='natural', extrapolate=False)
-        self._cache_C_interp[Q] = C_interp
-        self._cache_C_tail[Q] = (intercept, slope)
+        self._cache_C_interp[type][Q] = C_interp
+        self._cache_C_tail[type][Q] = (intercept, slope)
 
         return err
 
-    def C(self, Q, times):
-        times = np.asarray(times)
-        if self._cache_C_interp[Q] is None:
-            self.compute_C(Q)
-
-        C_vals = self._cache_C_interp[Q](times)
-        mask = np.abs(times) >= self.AP.time_extrapolate
-
-        if mask.any():
-            intercept, slope = self._cache_C_tail[Q]
-            tt = times[mask]
-            C_vals[mask] = intercept.real + np.abs(tt) * slope.real + 1j * (np.sign(tt) * intercept.imag + tt * slope.imag)
-
-        return C_vals
-    
-    ######## phi #######
-    
-    def phi(self, t, Q):
+    def phi(self, sign, Q, t):
+        assert(t >= 0.)
         if np.abs(t) < 1e-10:
             return self.g_less_t_fun(Q)(0.)
 
-        times, phi = solve_pseudo_dyson(self.g_less_t_fun(Q), self.g_grea_t_fun(Q), t, self.PP.capac_inv, self.AP.nr_pts_phi(t), method=self.AP.method)
+        times, phi = solve_pseudo_dyson(self.g_less_t_fun(Q), self.g_grea_t_fun(Q), t, sign * self.PP.capac_inv, self.AP.nr_pts_phi(t), method=self.AP.method)
         return phi[-1]
     
     ######## bare GF #########
@@ -497,7 +515,6 @@ class NumericModel(GFModel):
         return np.abs(self.g_reta(w_array, Q))**2 * (0.5 * self.delta_leads_K(w_array) + 1.j * np.imag(self.delta_leads_R(w_array)))
     
     def g_less_t_fun(self, Q):
-        Q = int(Q)
         if self._cache_g_less_t[Q] is None:
             g_less = self.g_less(self.AP.omegas_fft(), Q=Q)
 
@@ -508,7 +525,6 @@ class NumericModel(GFModel):
         return self._cache_g_less_t[Q]
 
     def g_grea_t_fun(self, Q):
-        Q = int(Q)
         if self._cache_g_grea_t[Q] is None:
             g_grea = self.g_grea(self.AP.omegas_fft(), Q=Q)
 
@@ -525,7 +541,7 @@ def test_model():
     Q = 0
 
     times = np.linspace(0., 10., 4)
-    phi = np.array([model.phi(t, Q) for t in times])
+    phi = np.array([model.phi(0, Q, t) for t in times])
     g_less = model.g_less_t_fun(Q)(times)
 
     idx = np.argmin(np.abs(times))
@@ -567,7 +583,7 @@ def test_nonreg():
 
     model = NumericModel(PP, AP)
     times = np.linspace(0., 10., 11)
-    C = model.C(0, times)
+    C = model.C(0, 0, times)
 
     C_ref = np.array([ 0.        +0.j        , -0.05929683+0.54617968j,
        -0.1205964 +1.17053087j, -0.15432367+1.81127392j,
