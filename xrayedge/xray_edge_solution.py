@@ -42,14 +42,13 @@ class AccuracyParameters:
     delta_interp_phi: reduce to increase precision. Should be smaller than timescale of variation of bare g.
     """
 
-    def __init__(self, physics_params, time_extrapolate, fft_nr_samples=50000, fft_w_max=50., tol_C=1e-2, slopetol_C=1e-2, delta_interp_phi=0.05, method='trapz'):
+    def __init__(self, physics_params, time_extrapolate, fft_nr_samples=50000, fft_w_max=50., tol_C=1e-2, delta_interp_phi=0.05, method='trapz'):
         self.PP = copy(physics_params)
 
         self.time_extrapolate = time_extrapolate
         self.fft_nr_samples = fft_nr_samples
         self.fft_w_max = fft_w_max # in unit of Gamma
         self.tol_C = tol_C
-        self.slopetol_C = slopetol_C
         self.delta_interp_phi = delta_interp_phi
         self.method = method
 
@@ -79,10 +78,6 @@ def gen_params(accuracy_params):
     params = copy(accuracy_params)
     params.tol_C *= 4.
     yield params, "tol_C"
-
-    # params = copy(accuracy_params)
-    # params.slopetol_C *= 2.
-    # yield params, "slopetol_C"
 
     params = copy(accuracy_params)
     params.delta_interp_phi *= 2.
@@ -219,7 +214,7 @@ class NumericModel(GFModel):
         else:
             raise ValueError
 
-        times, C_vals, err = cum_semiinf_adpat_simpson(lambda t: self.phi(sign, Q, t), scale=self.AP.time_extrapolate, tol=self.AP.tol_C, slopetol=self.AP.slopetol_C, extend=False)
+        times, C_vals, err = cum_semiinf_adpat_simpson(lambda t: self.phi(sign, Q, t), scale=self.AP.time_extrapolate, tol=self.AP.tol_C, extend=False)
         C_vals *= sign * self.PP.capac_inv
         err *= np.abs(self.PP.capac_inv)
 
@@ -326,7 +321,6 @@ def test_nonreg():
     AP.fft_w_max = 100.
     AP.fft_nr_samples = 100000
     AP.tol_C = 1e-2,
-    AP.slopetol_C = 1e-2,
     AP.delta_interp_phi = 0.05
 
     model = NumericModel(PP, AP)

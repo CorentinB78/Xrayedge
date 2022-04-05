@@ -146,11 +146,10 @@ def test_solve_pseudo_dyson_trapz():
     time, phi = solve_pseudo_dyson(cst_func(1.), cst_func(0.), t, V, 1000, method='trapz')
     np.testing.assert_allclose(phi, np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
 
+
 ### Cumulated adaptative integral
 
-
-
-def cum_semiinf_adpat_simpson(f, scale=1., tol=1e-8, slopetol=1e-8, extend=True, maxfeval=100000):
+def cum_semiinf_adpat_simpson(f, scale=1., tol=1e-8, slopetol=1e-8, extend=False, maxfeval=100000):
     """
     Adaptative simpson cumulative integral (antiderivative) of `f`, starting from x=0 toward x > 0.
     Assumes `f` goes to a constant value at x=+infinity.
