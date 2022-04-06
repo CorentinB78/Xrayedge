@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import linalg
+from scipy import linalg, interpolate
 import os
 
 
@@ -8,10 +8,6 @@ def cheb_points(n, a=-1., b=1.):
     assert(n > 1)
     assert(b > a)
     return (1. - np.cos((np.pi * np.arange(n)) / (n - 1))) * ((b - a) / 2.) + a
-
-def test_cheb_points():
-    np.testing.assert_allclose(cheb_points(3), [-1., 0., 1.], atol=1e-15)
-    np.testing.assert_allclose(cheb_points(3, -2., 16.), [-2., 7., 16.], atol=1e-15)
 
 ### Quasi-Dyson equation solver
 
@@ -41,6 +37,7 @@ def load_lagrange_convol_integrals():
 
 lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integrals()
 
+# TODO: check minus sign in g^<(-u_k)
 
 def solve_pseudo_dyson(g_less, g_grea, t, V, N, method='cheb'):
     """
@@ -72,6 +69,42 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method='cheb'):
 
             mat_M[:, m] *= V * t
             mat_M[m, m] += 1.
+
+        vec_b = g_less(t_array - t)
+
+    elif method == 'multicheb':
+        K = N
+        M = (N - 1) // (K - 1)
+        N = M * (K - 1) + 1
+        print(M, N)
+        print()
+
+        delta = t / float(M)
+        pts = cheb_points(K, 0., delta)
+
+        t_array = np.empty(N, dtype=float)
+        for i in range(M):
+            t_array[i:i + K] = i * delta + pts
+
+        mat_M = np.zeros((N, N), dtype=complex)
+        for j in range(M):
+            for jj in range(K):
+                m = (K-1) * j + jj
+                # print(m)
+                for i in range(M):
+                    for ii in range(K):
+                        n = ii + (K-1) * i
+                        print()
+                        for l in range(M):
+                            for ll in range(K):
+                                if i - 2 <= l + j <= i:
+                                    print(ll + (K-1) * l)
+                                    u_k = t_array[ll + (K-1) * l]
+                                    mat_M[n, m] += g_grea(u_k) * lagrange_integrals_grea[K][jj, ii, ll]
+                                    mat_M[n, m] += g_less(-u_k) * lagrange_integrals_less[K][jj, ii, ll]
+
+                mat_M[:, m] *= V * t
+                mat_M[m, m] += 1.
 
         vec_b = g_less(t_array - t)
 
@@ -108,44 +141,6 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method='cheb'):
         raise ValueError(f'Method "{method}" not found.')
 
     return t_array, linalg.solve(mat_M, vec_b)
-
-def test_solve_pseudo_dyson_cheb():
-    V = 2.
-    t = 3.
-
-    def cst_func(c):
-        return np.vectorize(lambda x: c)
-
-    time, phi = solve_pseudo_dyson(cst_func(1.), cst_func(1.), t, V, 10, method='cheb')
-    np.testing.assert_allclose(phi, 1. / (1. + V * t))
-
-
-    time, phi = solve_pseudo_dyson(cst_func(0.), cst_func(1.), t, V, 10, method='cheb')
-    np.testing.assert_allclose(phi, 0.)
-
-
-    time, phi = solve_pseudo_dyson(cst_func(1.), cst_func(0.), t, V, 20, method='cheb')
-    np.testing.assert_allclose(phi, np.exp(V * (time - t)))
-
-
-def test_solve_pseudo_dyson_trapz():
-    V = 2.
-    t = 3.
-
-    def cst_func(c):
-        return np.vectorize(lambda x: c)
-
-    time, phi = solve_pseudo_dyson(cst_func(1.), cst_func(1.), t, V, 10, method='trapz')
-    np.testing.assert_allclose(phi, 1. / (1. + V * t))
-
-
-    time, phi = solve_pseudo_dyson(cst_func(0.), cst_func(1.), t, V, 10, method='trapz')
-    np.testing.assert_allclose(phi, 0.)
-
-
-    time, phi = solve_pseudo_dyson(cst_func(1.), cst_func(0.), t, V, 1000, method='trapz')
-    np.testing.assert_allclose(phi, np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
-
 
 ### Cumulated adaptative integral
 
@@ -240,48 +235,3 @@ def cum_semiinf_adpat_simpson(f, scale=1., tol=1e-8, slopetol=1e-8, extend=False
     # x_err = x[4::4]
 
     return x_cumint, cumint, max(err)
-        
-
-def test_cum_semiinf_adpat_simpson():
-    def f(x):
-        return 10 * np.exp(-x * 3.) * np.sin(x) + (3 * x) / (2. * x + 6.)
-
-    x_cum, cum, err = cum_semiinf_adpat_simpson(f, 20., tol=1e-10)
-    
-    ref = 21.834031327325317 # integral from 0 to 20
-
-    i = np.argmin(np.abs(x_cum - 20.))
-    assert(x_cum[i] == 20.)
-    np.testing.assert_allclose(cum[i], ref, atol=1e-10)
-    np.testing.assert_allclose(cum[i], ref, atol=err)
-
-def test_integral_gauss():
-    def f(x):
-        return np.exp(-x**2)
-
-    x_cum, cum, err = cum_semiinf_adpat_simpson(f, 10., tol=1e-10)
-    
-    ref = np.sqrt(np.pi) / 2.
-
-    np.testing.assert_allclose(cum[-1], ref, atol=1e-10)
-
-def test_integral_poly():
-    def f(x):
-        return x**3 - x**5
-
-    x_cum, cum, err = cum_semiinf_adpat_simpson(f, 2., tol=1e-10)
-    
-    ref = 4. - 32. / 3.
-
-    np.testing.assert_allclose(cum[-1], ref, atol=1e-10)
-
-
-if __name__ == "__main__":
-    print("Running tests...")
-    test_cheb_points()
-    test_solve_pseudo_dyson_cheb()
-    test_solve_pseudo_dyson_trapz()
-    test_cum_semiinf_adpat_simpson()
-    test_integral_gauss()
-    test_integral_poly()
-    print("Success.")
