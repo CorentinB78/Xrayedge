@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, integrate
 import xrayedge as xray
 from xrayedge.integral_solvers import cheb_points
 
@@ -44,7 +44,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
 
         return interpolate.BarycentricInterpolator(x, y)
 
-    def test_solve_pseudo_dyson_cheb(self):
+    def test_cheb(self):
         V = 2.
         t = 3.
 
@@ -67,7 +67,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
 
 
-    def test_solve_pseudo_dyson_multicheb(self):
+    def test_multicheb(self):
         V = 2.
         t = 3.
 
@@ -90,7 +90,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
 
 
-    def test_solve_pseudo_dyson_trapz(self):
+    def test_trapz(self):
         V = 2.
         t = 3.
 
@@ -111,6 +111,61 @@ class TestSolvePseudoDyson(unittest.TestCase):
 
         time, phi = xray.solve_pseudo_dyson(np.sin, np.cos, t, V, 100, method='trapz')
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-3)
+
+    def test_second_order_cheb(self):
+        gl = lambda x: np.sin(1.5 * x) * np.exp(-(x - 1.)**2 / 3.)
+        gg = lambda x: np.cos(x + 2.) * np.exp(-(x + 0.5)**2 / 2.)
+        t = 3.
+        V = 0.0001
+
+        times, f_vals = xray.solve_pseudo_dyson(gl, gg, t, V, 50, method='cheb')
+
+        ### perturbation orders in V
+        f0 = gl(times - t)
+        f1 = np.array([np.array(integrate.quad(lambda x: gg(u - x) * gl(x - t), 0, u)[:2]) + np.array(integrate.quad(lambda x: gl(u - x) * gl(x - t), u, t)[:2]) for u in times])
+        f1_err = f1[:, 1]
+        f1 = -f1[:, 0]
+
+        np.testing.assert_array_less(f1_err, 1e-8)
+        np.testing.assert_allclose(f_vals, f0 + V * f1, atol=1e-8)
+        np.testing.assert_allclose((f_vals - f0) / V, f1, atol=1e-5)
+
+    def test_second_order_multicheb(self):
+        gl = lambda x: np.sin(1.5 * x) * np.exp(-(x - 1.)**2 / 3.)
+        gg = lambda x: np.cos(x + 2.) * np.exp(-(x + 0.5)**2 / 2.)
+        t = 3.
+        V = 0.0001
+
+        times, f_vals = xray.solve_pseudo_dyson(gl, gg, t, V, 50, method='multicheb')
+
+        ### perturbation orders in V
+        f0 = gl(times - t)
+        f1 = np.array([np.array(integrate.quad(lambda x: gg(u - x) * gl(x - t), 0, u)[:2]) + np.array(integrate.quad(lambda x: gl(u - x) * gl(x - t), u, t)[:2]) for u in times])
+        f1_err = f1[:, 1]
+        f1 = -f1[:, 0]
+
+        np.testing.assert_array_less(f1_err, 1e-8)
+        np.testing.assert_allclose(f_vals, f0 + V * f1, atol=1e-8)
+        np.testing.assert_allclose((f_vals - f0) / V, f1, atol=1e-5)
+
+    def test_second_order_trapz(self):
+        gl = lambda x: np.sin(1.5 * x) * np.exp(-(x - 1.)**2 / 3.)
+        gg = lambda x: np.cos(x + 2.) * np.exp(-(x + 0.5)**2 / 2.)
+        t = 3.
+        V = 0.0001
+
+        times, f_vals = xray.solve_pseudo_dyson(gl, gg, t, V, 200, method='trapz')
+
+        ### perturbation orders in V
+        f0 = gl(times - t)
+        f1 = np.array([np.array(integrate.quad(lambda x: gg(u - x) * gl(x - t), 0, u)[:2]) + np.array(integrate.quad(lambda x: gl(u - x) * gl(x - t), u, t)[:2]) for u in times])
+        f1_err = f1[:, 1]
+        f1 = -f1[:, 0]
+
+        np.testing.assert_array_less(f1_err, 1e-8)
+        np.testing.assert_allclose(f_vals, f0 + V * f1, atol=1e-8)
+        np.testing.assert_allclose((f_vals - f0) / V, f1, atol=1e-5)
+
 
 class TestCumAdaptIntegrator(unittest.TestCase):
 
