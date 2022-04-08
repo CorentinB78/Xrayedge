@@ -3,16 +3,17 @@ import numpy as np
 from scipy import integrate
 
 
-def cheb_points(n, a=-1., b=1.):
+def cheb_points(n, a=-1.0, b=1.0):
     """
     Chebyshev points on interval [a, b]
     """
-    assert(n > 1)
-    assert(b > a)
-    return (1. - np.cos((np.pi * np.arange(n)) / (n - 1))) * ((b - a) / 2.) + a
+    assert n > 1
+    assert b > a
+    return (1.0 - np.cos((np.pi * np.arange(n)) / (n - 1))) * ((b - a) / 2.0) + a
 
-np.testing.assert_allclose(cheb_points(3), [-1., 0., 1.], atol=1e-15)
-np.testing.assert_allclose(cheb_points(3, -2., 16.), [-2., 7., 16.], atol=1e-15)
+
+np.testing.assert_allclose(cheb_points(3), [-1.0, 0.0, 1.0], atol=1e-15)
+np.testing.assert_allclose(cheb_points(3, -2.0, 16.0), [-2.0, 7.0, 16.0], atol=1e-15)
 
 
 def lagrange_convol_integral(N, m, n, k):
@@ -27,17 +28,19 @@ def lagrange_convol_integral(N, m, n, k):
 
     Lesser integrals: \int_{x_n}^1 dx l_k(x - x_n) l_m(x)
     """
-    pts = cheb_points(N, 0., 1.)
+    pts = cheb_points(N, 0.0, 1.0)
     xn = pts[n]
 
     def lagrange(j):
         xj = pts[j]
+
         def f(x):
-            out = 1.
+            out = 1.0
             for k, xk in enumerate(pts):
                 if k != j:
                     out *= (x - xk) / (xj - xk)
             return out
+
         return f
 
     lk = lagrange(k)
@@ -51,7 +54,7 @@ def lagrange_convol_integral(N, m, n, k):
     def f_less(x):
         return lk(x - xn) * lm(x)
 
-    res_less = integrate.quad(f_less, xn, 1.)
+    res_less = integrate.quad(f_less, xn, 1.0)
 
     return res_grea[0], res_less[0]
 
@@ -71,7 +74,6 @@ def compute_all(N):
     return grea, less
 
 
-
 if __name__ == "__main__":
     from os import path, remove
     import argparse
@@ -79,10 +81,23 @@ if __name__ == "__main__":
     def filename(N):
         return f"lagrange_convol_integrals_N={N}.npz"
 
-    parser = argparse.ArgumentParser(description=f'Compute convolution integrals between Lagrange polynomials on a Chebyshev grid. It is useful for convoluting functions quickly. Data is stored in files "{filename("*")}".')
-    parser.add_argument('Nmax', type=int, nargs=1, help='Max number N of Chebyshev points. The integrals are computed for all N <= Nmax')
-    parser.add_argument('--time', action='store_true', help='Also plot execution time as function of N')
-    parser.add_argument('--force', action='store_true', help='Force recomputation of all N. Existing files will be deleted.')
+    parser = argparse.ArgumentParser(
+        description=f'Compute convolution integrals between Lagrange polynomials on a Chebyshev grid. It is useful for convoluting functions quickly. Data is stored in files "{filename("*")}".'
+    )
+    parser.add_argument(
+        "Nmax",
+        type=int,
+        nargs=1,
+        help="Max number N of Chebyshev points. The integrals are computed for all N <= Nmax",
+    )
+    parser.add_argument(
+        "--time", action="store_true", help="Also plot execution time as function of N"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force recomputation of all N. Existing files will be deleted.",
+    )
     args = parser.parse_args()
 
     Nmax = args.Nmax[0]
@@ -105,9 +120,9 @@ if __name__ == "__main__":
             else:
                 print(f"N={N} already computed.")
                 if args.time:
-                    times.append(0.)
+                    times.append(0.0)
                 continue
-        
+
         print(f"Computing N={N}...")
 
         if args.time:
@@ -126,14 +141,13 @@ if __name__ == "__main__":
         print("times:", times)
 
         n = np.arange(2, len(times) + 2)
-        plt.plot(n, times, 'o-', label='data')
-        plt.plot(n, 1e-4 * n**3, '--', label='N^3')
-        plt.plot(n, 1e-5 * n**5, '--', label='N^5')
+        plt.plot(n, times, "o-", label="data")
+        plt.plot(n, 1e-4 * n**3, "--", label="N^3")
+        plt.plot(n, 1e-5 * n**5, "--", label="N^5")
 
         plt.loglog()
         plt.legend()
-        plt.xlabel('N')
-        plt.ylabel('time (arb. unit)')
+        plt.xlabel("N")
+        plt.ylabel("time (arb. unit)")
 
         plt.show()
-        

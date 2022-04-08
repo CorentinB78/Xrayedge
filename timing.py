@@ -7,22 +7,23 @@ import time
 
 PP = xray.PhysicsParameters()
 
-PP.beta = 50.
-PP.bias = 0.
-PP.eps_c = 0. # on the QPC
-PP.mu_c = 0.
-PP.Gamma = 1.
-PP.capac_inv = 5. # = dV/dQ
+PP.beta = 50.0
+PP.bias = 0.0
+PP.eps_c = 0.0  # on the QPC
+PP.mu_c = 0.0
+PP.Gamma = 1.0
+PP.capac_inv = 5.0  # = dV/dQ
 
-tmax = 30.
+tmax = 30.0
 
-AP = xray.AccuracyParameters(PP,
-                            time_extrapolate=tmax,
-                            tol_C=1e-3,
-                            delta_interp_phi=0.05,
-                            fft_w_max=500.,
-                            fft_nr_samples=500000,
-                            )
+AP = xray.AccuracyParameters(
+    PP,
+    time_extrapolate=tmax,
+    tol_C=1e-3,
+    delta_interp_phi=0.05,
+    fft_w_max=500.0,
+    fft_nr_samples=500000,
+)
 
 model = xray.NumericModel(PP, AP)
 
@@ -40,6 +41,6 @@ print()
 print(f"Error: {err}")
 print()
 
-times = np.linspace(0., tmax, 300)
+times = np.linspace(0.0, tmax, 300)
 plt.plot(times, model.C(0, 0, times).real)
 plt.show()
