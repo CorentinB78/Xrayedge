@@ -1,3 +1,6 @@
+"""
+Little script to time execution.
+"""
 import numpy as np
 from matplotlib import pyplot as plt
 import xrayedge as xray

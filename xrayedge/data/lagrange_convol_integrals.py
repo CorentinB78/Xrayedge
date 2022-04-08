@@ -1,4 +1,7 @@
 #!python3
+"""
+Script for computing convolution integrals between the different Lagrange polynomials for Chebychev nodes.
+"""
 import numpy as np
 from scipy import integrate
 
@@ -60,6 +63,9 @@ def lagrange_convol_integral(N, m, n, k):
 
 
 def compute_all(N):
+    """
+    Compute all integrals for the N-nodes Chebychev polynomials
+    """
 
     grea = np.empty((N, N, N))
     less = np.empty((N, N, N))

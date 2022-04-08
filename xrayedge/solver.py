@@ -13,6 +13,10 @@ from .integral_solvers import solve_pseudo_dyson, cum_semiinf_adpat_simpson
 
 
 class PhysicsParameters:
+    """
+    Parameters of the Hamiltonian and statistics.
+    """
+
     def __init__(
         self,
         beta=1.0,
@@ -51,6 +55,9 @@ class PhysicsParameters:
 
 class AccuracyParameters:
     """
+    Parameters for the accuracy of the calculation.
+    Some are derived from the physics parameters.
+
     methods available: trapz, cheb
     fft_w_max is in unit of Gamma
     delta_interp_phi: reduce to increase precision. Should be smaller than timescale of variation of bare g.
@@ -91,7 +98,9 @@ class AccuracyParameters:
 
 def gen_params(accuracy_params):
     """
-    Generator returning (ap, label)
+    Generator yielding variations of accuracy parameters for convergence checks.
+
+    Yield (ap, label)
     """
 
     yield copy(accuracy_params), "original"
@@ -119,6 +128,11 @@ def gen_params(accuracy_params):
 
 
 class GFModel:
+    """
+    Base model for Green function calculation.
+    Only contains basic relations.
+    """
+
     def __init__(self, physics_params=None, accuracy_params=None):
         self.PP = (
             copy(physics_params) if physics_params is not None else PhysicsParameters()
@@ -159,6 +173,9 @@ class GFModel:
         raise NotImplementedError
 
     def G_grea(self, t_array):
+        """
+        Greater Green function in times on the QD
+        """
         prefactor = -1j * np.exp(-1j * t_array * self.PP.eps_d)
         out = self.proba(0, 0) * self.A_plus(0, t_array)
         out += (
@@ -169,6 +186,9 @@ class GFModel:
         return prefactor * out
 
     def G_less(self, t_array):
+        """
+        Lesser Green function in times on the QD
+        """
         prefactor = 1j * np.exp(-1j * t_array * self.PP.eps_d)
         out = self.proba(1, 0) * np.conj(self.A_minus(1, t_array))
         out += (
@@ -179,6 +199,9 @@ class GFModel:
         return prefactor * out
 
     def G_grea_NCA_constraint(self, t_array):
+        """
+        Greater Green function in times on the QD under NCA constrain.
+        """
         # no U in NCA constraint
         return (
             -1j
@@ -189,6 +212,8 @@ class GFModel:
 
     def G_reta_w_NCA_constraint(self, nr_freqs):
         """
+        Greater-retarded Green function in frequencies on the QD under NCA constrain.
+
         For NCA in the steady state regime, one only needs the greater quaisparticle GFs in the sector Q=0 (see notes).
         Also, the partition function is reduced to 1.
 
@@ -200,6 +225,12 @@ class GFModel:
 
 
 class NumericModel(GFModel):
+    """
+    Model for numerical calculation of correlators and Green functions.
+
+    Data is cached after calculation, so parameters should not be changed.
+    """
+
     def __init__(self, *args, **kwargs):
         super(NumericModel, self).__init__(*args, **kwargs)
         self.N = 3  # nr of different charge states affecting the QPC
@@ -209,13 +240,21 @@ class NumericModel(GFModel):
         self._cache_C_tail = [[None] * self.N, [None] * self.N]
 
     def A_plus(self, Q, times):
+        """
+        A^+_Q(t)
+        """
         return np.exp(self.C(0, Q, times))
 
     def A_minus(self, Q, times):
+        """
+        A^-_Q(t)
+        """
         return np.exp(self.C(1, Q, times))
 
     def A_plus_reta_w(self, Q, nr_freqs):
         """
+        FT of A^+_Q(t) theta(t)
+
         Returns: freqs, A, energy shift.
         """
         type = 0
@@ -259,7 +298,7 @@ class NumericModel(GFModel):
 
     def compute_C(self, type, Q):
         """
-        Fills cache and returns error estimate.
+        Compute C, fills cache and returns error estimate.
         """
         if type == 0:
             sign = 1
@@ -291,6 +330,9 @@ class NumericModel(GFModel):
         return err
 
     def phi(self, sign, Q, t):
+        """
+        Computes \phi_t(t, t^+) using the quasi Dyson equation.
+        """
         assert t >= 0.0
         if np.abs(t) < 1e-10:
             return self.g_less_t_fun(Q)(0.0)
@@ -308,11 +350,15 @@ class NumericModel(GFModel):
     ######## bare GF #########
 
     def delta_leads_R(self, w_array):
-        """For both leads"""
+        """
+        Retarded hybridization function in frequencies for left and right leads (together) of QPC.
+        """
         return -1j * self.PP.Gamma * np.ones_like(w_array)
 
     def delta_leads_K(self, w_array):
-        """For both leads"""
+        """
+        Keldysh hybridization function in frequencies for left and right leads (together) of QPC.
+        """
         return (
             -2j
             * (
@@ -324,6 +370,9 @@ class NumericModel(GFModel):
         )
 
     def g_reta(self, w_array, Q):
+        """
+        Retarded GF in frequencies of QPC's central site.
+        """
         return 1.0 / (
             w_array
             - self.PP.eps_c
@@ -332,21 +381,35 @@ class NumericModel(GFModel):
         )
 
     def g_keld(self, w_array, Q):
+        """
+        Keldysh GF in frequencies of QPC's central site.
+        """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * self.delta_leads_K(w_array)
 
     def g_less(self, w_array, Q):
+        """
+        Lesser GF in frequencies of QPC's central site.
+        """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * (
             0.5 * self.delta_leads_K(w_array)
             - 1.0j * np.imag(self.delta_leads_R(w_array))
         )
 
     def g_grea(self, w_array, Q):
+        """
+        Greater GF in frequencies of QPC's central site.
+        """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * (
             0.5 * self.delta_leads_K(w_array)
             + 1.0j * np.imag(self.delta_leads_R(w_array))
         )
 
     def g_less_t_fun(self, Q):
+        """
+        Lesser GF in times of QPC's central site.
+
+        Returns a (cached) function
+        """
         if self._cache_g_less_t[Q] is None:
             g_less = self.g_less(self.AP.omegas_fft(), Q=Q)
 
@@ -357,6 +420,11 @@ class NumericModel(GFModel):
         return self._cache_g_less_t[Q]
 
     def g_grea_t_fun(self, Q):
+        """
+        Greater GF in times of QPC's central site.
+
+        Returns a (cached) function
+        """
         if self._cache_g_grea_t[Q] is None:
             g_grea = self.g_grea(self.AP.omegas_fft(), Q=Q)
 

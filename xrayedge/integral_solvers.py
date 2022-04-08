@@ -14,6 +14,9 @@ def cheb_points(n, a=-1.0, b=1.0):
 
 ### loading Lagrange convolution integrals for the Chebychev method
 def load_lagrange_convol_integrals():
+    """
+    Load the convolution integrals in data/ for the Chebychev method.
+    """
     module_dir = os.path.dirname(__file__)
 
     grea = [None, None]
@@ -82,6 +85,7 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
         vec_b = g_less(t_array - t)
 
     elif method == "multicheb":
+        ### WIP
         K = N
         M = (N - 1) // (K - 1)
         N = M * (K - 1) + 1
