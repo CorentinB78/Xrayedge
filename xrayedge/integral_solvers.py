@@ -132,27 +132,25 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
         gg = g_grea(t_array)
         gl = g_less(-t_array)
 
-        mat_M = np.zeros((N, N), dtype=complex)
+        r = np.empty(N, dtype=complex)
+        c = np.empty(N, dtype=complex)
+        r[1:N] = gl[1:N] * 2.0 / 3.0 + gl[0 : N - 1] / 6.0
+        r[1 : N - 1] += gl[2:N] / 6.0
+        c[1:N] = gg[1:N] * 2.0 / 3.0 + gg[0 : N - 1] / 6.0
+        c[1 : N - 1] += gg[2:N] / 6.0
+        c[0] = (gg[0] + gl[0]) / 3.0 + (gg[1] + gl[1]) / 6.0
 
-        for n in range(N):
-            if n > 0:
-                for m in range(n + 1):
-                    if m < n:
-                        mat_M[n, m] += gg[n - m] / 3.0 + gg[n - m - 1] / 6.0
+        mat_M = linalg.toeplitz(c, r)
 
-                    if m > 0:
-                        mat_M[n, m] += gg[n - m] / 3.0 + gg[n - m + 1] / 6.0
+        # boundary corrections
+        mat_M[0, -1] -= gl[N - 1] / 3.0
+        mat_M[1:N, -1] -= gl[N - 2 :: -1] / 3.0 + gl[N - 1 : 0 : -1] / 6.0
+        mat_M[0 : N - 1, 0] -= gg[0 : N - 1] / 3.0 + gg[1:N] / 6.0
+        mat_M[N - 1, 0] -= gg[N - 1] / 3.0
 
-            if n < N - 1:
-                for m in range(n, N):
-                    if m < N - 1:
-                        mat_M[n, m] += gl[m - n] / 3.0 + gl[m - n + 1] / 6.0
-
-                    if m > n:
-                        mat_M[n, m] += gl[m - n] / 3.0 + gl[m - n - 1] / 6.0
-
-            mat_M[n, :] *= V * delta
-            mat_M[n, n] += 1.0
+        mat_M *= V * delta
+        for p in range(N):
+            mat_M[p, p] += 1.0
 
         vec_b = g_less(t_array - t)
 
