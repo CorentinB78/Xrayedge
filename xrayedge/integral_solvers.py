@@ -167,8 +167,8 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="trapz"):
 
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
-        gg = g_grea(t_array)
-        gl = g_less(-t_array)
+        gg = g_grea(t_array) * V * delta
+        gl = g_less(-t_array) * V * delta
 
         r = np.empty(N, dtype=complex)
         c = np.empty(N, dtype=complex)
@@ -193,18 +193,13 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="trapz"):
             mat_M[:, 0] -= correc_0
             mat_M[:, -1] -= correc_1
 
-            mat_M *= V * delta
             for p in range(N):
                 mat_M[p, p] += 1.0
 
             return t_array, linalg.solve(mat_M, vec_b)
 
         elif method == "trapz-GMRES":
-            c *= V * delta
-            r *= V * delta
             c[0] += 1.0
-            correc_0 *= V * delta
-            correc_1 *= V * delta
             mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
 
             res, info = gmres(mat_M, vec_b, tol=1e-5, atol=1e-5)
