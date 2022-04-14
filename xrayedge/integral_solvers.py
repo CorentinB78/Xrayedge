@@ -5,19 +5,18 @@ import os
 
 
 class QuasiToeplitzMatrix(LinearOperator):
-    """
-    Matrix of type Toeplitz + corrections on the first and last columns.
-
-    Allows fast matrix vector product with FFT.
-
-    Arguments:
-        c -- first column for Toeplitz part
-        r -- first row for Toeplitz part (r[0] is ignored)
-        corrections -- pair of columns which are added as corrections
-        dtype -- data type (default is complex)
-    """
-
     def __init__(self, c, r, corrections, dtype=complex):
+        """
+        Matrix of type Toeplitz + corrections on the first and last columns.
+
+        Allows fast matrix vector product with FFT.
+
+        Arguments:
+            c -- first column for Toeplitz part
+            r -- first row for Toeplitz part (r[0] is ignored)
+            corrections -- pair of columns which are added as corrections
+            dtype -- data type (default is complex)
+        """
         self.c_r = (c, r)
         self.corrections = corrections
         super().__init__(dtype, shape=(len(c), len(r)))
