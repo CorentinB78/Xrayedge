@@ -66,8 +66,6 @@ def load_lagrange_convol_integrals():
 
 lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integrals()
 
-# TODO: check minus sign in g^<(-u_k)
-
 
 def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="trapz"):
     """
