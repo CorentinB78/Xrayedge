@@ -2,7 +2,28 @@ import unittest
 import numpy as np
 from scipy import interpolate, integrate
 import xrayedge as xray
-from xrayedge.integral_solvers import cheb_points
+from xrayedge.integral_solvers import cheb_points, QuasiToeplitzMatrix
+
+
+class TestQuasiToeplitzMatrix(unittest.TestCase):
+    def test_matvec_product(self):
+        c = np.array([1.0j, 2.0, -3.0])
+        r = np.array([-2.0, 3.0j, 1.0])
+        corr_0 = np.array([0.5, -0.5j, 0.0])
+        corr_1 = np.array([1.5, 0.5j, 1.0])
+        b = np.array([2.0, 5.0j, -3.0])
+
+        M = QuasiToeplitzMatrix(c, r, (corr_0, corr_1))
+
+        M_ref = np.array(
+            [
+                [1.0j + 0.5, 3.0j, 2.5],
+                [2.0 - 0.5j, 1.0j, 3.5j],
+                [-3.0, 2.0, 1.0 + 1.0j],
+            ]
+        )
+
+        np.testing.assert_array_almost_equal(M @ b, np.dot(M_ref, b))
 
 
 class TestCheb(unittest.TestCase):
