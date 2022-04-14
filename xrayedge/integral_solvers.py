@@ -103,19 +103,16 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="trapz"):
                 f"Lagrange convolution integrals have not been computed for N={N}"
             )
         t_array = cheb_points(N, 0.0, t)
+        gg = g_grea(t_array) * V * t
+        gl = g_less(-t_array) * V * t
 
         mat_M = np.empty((N, N), dtype=complex)
         for m in range(N):
             for n in range(N):
 
-                mat_M[n, m] = np.dot(
-                    g_grea(t_array), lagrange_integrals_grea[N][m, n, :]
-                )
-                mat_M[n, m] += np.dot(
-                    g_less(-t_array), lagrange_integrals_less[N][m, n, :]
-                )
+                mat_M[n, m] = np.dot(gg, lagrange_integrals_grea[N][m, n, :])
+                mat_M[n, m] += np.dot(gl, lagrange_integrals_less[N][m, n, :])
 
-            mat_M[:, m] *= V * t
             mat_M[m, m] += 1.0
 
         vec_b = g_less(t_array - t)
