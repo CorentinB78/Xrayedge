@@ -1,6 +1,31 @@
 import numpy as np
-from scipy import linalg, interpolate
+from scipy import linalg
+from scipy.sparse.linalg import gmres, LinearOperator
 import os
+
+
+class QuasiToeplitzMatrix(LinearOperator):
+    """
+    Matrix of type Toeplitz + corrections on the first and last columns.
+
+    Allows fast matrix vector product with FFT.
+
+    Arguments:
+        c -- first column for Toeplitz part
+        r -- first row for Toeplitz part (r[0] is ignored)
+        corrections -- pair of columns which are added as corrections
+        dtype -- data type (default is complex)
+    """
+
+    def __init__(self, c, r, corrections, dtype=complex):
+        self.c_r = (c, r)
+        self.corrections = corrections
+        super().__init__(dtype, shape=(len(c), len(r)))
+
+    def _matvec(self, x):
+        out = linalg.matmul_toeplitz(self.c_r, x, check_finite=False)
+        out[:] += x[0] * self.corrections[0] + x[-1] * self.corrections[1]
+        return out
 
 
 def cheb_points(n, a=-1.0, b=1.0):
@@ -45,7 +70,7 @@ lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integral
 # TODO: check minus sign in g^<(-u_k)
 
 
-def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
+def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="trapz"):
     """
     Solve the following equation (for 0 <= u <= t):
 
@@ -53,13 +78,27 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
 
     with g(x) = \theta(x) g^>(x) + \theta(-x) g^<(x)
 
-    f is solved on a Chebyshev grid of N points.
-    g_less and g_grea should be vectorized.
+    Arguments:
+        g_less -- vectorized callable for g^<
+        g_grea -- vectorized callable for g^>
+        t -- positive float
+        V -- real or complex parameter
+        N -- number of grid points on which f is computed
 
-    returns u_grid, f
+    Keyword Arguments:
+        method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
+
+    Returns:
+        (grid_pts, f_values) a pair of coordiantes and corresponding values for f
     """
     assert t > 0.0
     assert N > 1
+
+    if method == "trapz":
+        if N < 200:
+            method = "trapz-LU"
+        else:
+            method = "trapz-GMRES"
 
     if method == "cheb":
         if N >= len(lagrange_integrals_grea):
@@ -83,6 +122,7 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
             mat_M[m, m] += 1.0
 
         vec_b = g_less(t_array - t)
+        return t_array, linalg.solve(mat_M, vec_b)
 
     elif method == "multicheb":
         ### WIP
@@ -126,8 +166,9 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
                 mat_M[m, m] += 1.0
 
         vec_b = g_less(t_array - t)
+        return t_array, linalg.solve(mat_M, vec_b)
 
-    elif method == "trapz":
+    elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
         gg = g_grea(t_array)
         gl = g_less(-t_array)
@@ -140,8 +181,6 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
         c[1 : N - 1] += gg[2:N] / 6.0
         c[0] = (gg[0] + gl[0]) / 3.0 + (gg[1] + gl[1]) / 6.0
 
-        mat_M = linalg.toeplitz(c, r)
-
         # boundary corrections
         correc_0 = gg[0:N] / 3.0
         correc_0[0 : N - 1] += gg[1:N] / 6.0
@@ -149,19 +188,37 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
         correc_1 = gl[N - 1 :: -1] / 3.0
         correc_1[1:N] += gl[N - 1 : 0 : -1] / 6.0
 
-        mat_M[:, 0] -= correc_0
-        mat_M[:, -1] -= correc_1
-
-        mat_M *= V * delta
-        for p in range(N):
-            mat_M[p, p] += 1.0
-
         vec_b = g_less(t_array - t)
 
-    else:
-        raise ValueError(f'Method "{method}" not found.')
+        if method == "trapz-LU":
+            mat_M = linalg.toeplitz(c, r)
 
-    return t_array, linalg.solve(mat_M, vec_b)
+            mat_M[:, 0] -= correc_0
+            mat_M[:, -1] -= correc_1
+
+            mat_M *= V * delta
+            for p in range(N):
+                mat_M[p, p] += 1.0
+
+            return t_array, linalg.solve(mat_M, vec_b)
+
+        elif method == "trapz-GMRES":
+            c *= V * delta
+            r *= V * delta
+            c[0] += 1.0
+            correc_0 *= V * delta
+            correc_1 *= V * delta
+            mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
+
+            res, info = gmres(mat_M, vec_b, tol=1e-5, atol=1e-5)
+            if info > 0:
+                print("/!\ GMRES did not converge.")
+            elif info < 0:
+                raise RuntimeError("Problem with GMRES")
+
+            return t_array, res
+
+    raise ValueError(f'Method "{method}" not found.')
 
 
 ### Cumulated adaptative integral
