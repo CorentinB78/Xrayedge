@@ -26,7 +26,7 @@ class TestQuasiToeplitzMatrix(unittest.TestCase):
         np.testing.assert_array_almost_equal(M @ b, np.dot(M_ref, b))
 
 
-class TestCheb(unittest.TestCase):
+class TestChebPoints(unittest.TestCase):
     def test_cheb_points(self):
         np.testing.assert_allclose(cheb_points(3), [-1.0, 0.0, 1.0], atol=1e-15)
         np.testing.assert_allclose(
