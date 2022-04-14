@@ -143,10 +143,14 @@ def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="cheb"):
         mat_M = linalg.toeplitz(c, r)
 
         # boundary corrections
-        mat_M[0, -1] -= gl[N - 1] / 3.0
-        mat_M[1:N, -1] -= gl[N - 2 :: -1] / 3.0 + gl[N - 1 : 0 : -1] / 6.0
-        mat_M[0 : N - 1, 0] -= gg[0 : N - 1] / 3.0 + gg[1:N] / 6.0
-        mat_M[N - 1, 0] -= gg[N - 1] / 3.0
+        correc_0 = gg[0:N] / 3.0
+        correc_0[0 : N - 1] += gg[1:N] / 6.0
+
+        correc_1 = gl[N - 1 :: -1] / 3.0
+        correc_1[1:N] += gl[N - 1 : 0 : -1] / 6.0
+
+        mat_M[:, 0] -= correc_0
+        mat_M[:, -1] -= correc_1
 
         mat_M *= V * delta
         for p in range(N):
