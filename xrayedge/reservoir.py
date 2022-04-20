@@ -91,14 +91,17 @@ class QPC(Reservoir):
         if nr_samples_fft is None:
             dw = np.min(spreads) / 100.0
             self.N_fft = int(2 * w_max / dw + 0.5)
+
+            if self.N_fft >= int(1e6):
+                r = self.N_fft / 1e6
+                self.w_max = self.w_max / np.sqrt(r)
+                dw = dw * np.sqrt(r)
+                print(f"/!\ [Reservoir] FFT requires {self.N_fft} grid points.")
+                self.N_fft = int(2 * self.w_max / dw + 0.5)
+                print(f"Change to {self.N_fft} grid points.")
+
         else:
             self.N_fft = nr_samples_fft
-
-        if self.N_fft >= int(1e6):
-            print(
-                f"/!\ [Reservoir] FFT requires {self.N_fft} grid points. Capped to 10^6."
-            )
-            self.N_fft = int(1e6)
 
     def delta_leads_R(self, w_array):
         """
