@@ -157,22 +157,22 @@ class TestSolvePseudoDyson(unittest.TestCase):
         def cst_func(c):
             return np.vectorize(lambda x: c)
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, V, 10, method="cheb"
         )
         np.testing.assert_allclose(phi, 1.0 / (1.0 + V * t))
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, V, 10, method="cheb"
         )
         np.testing.assert_allclose(phi, 0.0)
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, V, 20, method="cheb"
         )
         np.testing.assert_allclose(phi, np.exp(V * (time - t)))
 
-        time, phi = xray.solve_pseudo_dyson(np.sin, np.cos, t, V, 50, method="cheb")
+        time, phi = xray.solve_quasi_dyson(np.sin, np.cos, t, V, 50, method="cheb")
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
 
     def test_multicheb(self):
@@ -182,24 +182,22 @@ class TestSolvePseudoDyson(unittest.TestCase):
         def cst_func(c):
             return np.vectorize(lambda x: c)
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, V, 10, method="multicheb"
         )
         np.testing.assert_allclose(phi, 1.0 / (1.0 + V * t))
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, V, 10, method="multicheb"
         )
         np.testing.assert_allclose(phi, 0.0)
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, V, 20, method="multicheb"
         )
         np.testing.assert_allclose(phi, np.exp(V * (time - t)))
 
-        time, phi = xray.solve_pseudo_dyson(
-            np.sin, np.cos, t, V, 50, method="multicheb"
-        )
+        time, phi = xray.solve_quasi_dyson(np.sin, np.cos, t, V, 50, method="multicheb")
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
 
     def test_trapz(self):
@@ -209,22 +207,22 @@ class TestSolvePseudoDyson(unittest.TestCase):
         def cst_func(c):
             return np.vectorize(lambda x: c)
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, V, 10, method="trapz"
         )
         np.testing.assert_allclose(phi, 1.0 / (1.0 + V * t))
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, V, 10, method="trapz"
         )
         np.testing.assert_allclose(phi, 0.0)
 
-        time, phi = xray.solve_pseudo_dyson(
+        time, phi = xray.solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, V, 1000, method="trapz"
         )
         np.testing.assert_allclose(phi, np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
 
-        time, phi = xray.solve_pseudo_dyson(np.sin, np.cos, t, V, 100, method="trapz")
+        time, phi = xray.solve_quasi_dyson(np.sin, np.cos, t, V, 100, method="trapz")
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-3)
 
     def test_second_order_cheb(self):
@@ -233,7 +231,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = xray.solve_pseudo_dyson(gl, gg, t, V, 50, method="cheb")
+        times, f_vals = xray.solve_quasi_dyson(gl, gg, t, V, 50, method="cheb")
 
         ### perturbation orders in V
         f0 = gl(times - t)
@@ -257,7 +255,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = xray.solve_pseudo_dyson(gl, gg, t, V, 50, method="multicheb")
+        times, f_vals = xray.solve_quasi_dyson(gl, gg, t, V, 50, method="multicheb")
 
         ### perturbation orders in V
         f0 = gl(times - t)
@@ -281,7 +279,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = xray.solve_pseudo_dyson(gl, gg, t, V, 200, method="trapz")
+        times, f_vals = xray.solve_quasi_dyson(gl, gg, t, V, 200, method="trapz")
 
         ### perturbation orders in V
         f0 = gl(times - t)

@@ -67,7 +67,7 @@ def load_lagrange_convol_integrals():
 lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integrals()
 
 
-def solve_pseudo_dyson(g_less, g_grea, t, V, N, method="trapz"):
+def solve_quasi_dyson(g_less, g_grea, t, V, N, method="trapz"):
     """
     Solve the following equation (for 0 <= u <= t):
 

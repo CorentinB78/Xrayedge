@@ -2,7 +2,7 @@ import numpy as np
 from scipy import interpolate
 import toolbox as tb
 from copy import copy
-from .integral_solvers import solve_pseudo_dyson, cum_semiinf_adpat_simpson
+from .integral_solvers import solve_quasi_dyson, cum_semiinf_adpat_simpson
 from .reservoir import Reservoir, QPC
 
 # TODO write test against asymptotic result
@@ -338,7 +338,7 @@ class NumericModel(GFModel):
         if np.abs(t) < 1e-10:
             return self.reservoir.g_less_t_fun(Q)(0.0)
 
-        times, phi = solve_pseudo_dyson(
+        times, phi = solve_quasi_dyson(
             self.reservoir.g_less_t_fun(Q),
             self.reservoir.g_grea_t_fun(Q),
             t,
