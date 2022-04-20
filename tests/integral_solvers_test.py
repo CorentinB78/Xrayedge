@@ -175,31 +175,6 @@ class TestSolvePseudoDyson(unittest.TestCase):
         time, phi = xray.solve_quasi_dyson(np.sin, np.cos, t, V, 50, method="cheb")
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
 
-    def test_multicheb(self):
-        V = 2.0
-        t = 3.0
-
-        def cst_func(c):
-            return np.vectorize(lambda x: c)
-
-        time, phi = xray.solve_quasi_dyson(
-            cst_func(1.0), cst_func(1.0), t, V, 10, method="multicheb"
-        )
-        np.testing.assert_allclose(phi, 1.0 / (1.0 + V * t))
-
-        time, phi = xray.solve_quasi_dyson(
-            cst_func(0.0), cst_func(1.0), t, V, 10, method="multicheb"
-        )
-        np.testing.assert_allclose(phi, 0.0)
-
-        time, phi = xray.solve_quasi_dyson(
-            cst_func(1.0), cst_func(0.0), t, V, 20, method="multicheb"
-        )
-        np.testing.assert_allclose(phi, np.exp(V * (time - t)))
-
-        time, phi = xray.solve_quasi_dyson(np.sin, np.cos, t, V, 50, method="multicheb")
-        np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
-
     def test_trapz(self):
         V = 2.0
         t = 3.0
@@ -232,30 +207,6 @@ class TestSolvePseudoDyson(unittest.TestCase):
         V = 0.0001
 
         times, f_vals = xray.solve_quasi_dyson(gl, gg, t, V, 50, method="cheb")
-
-        ### perturbation orders in V
-        f0 = gl(times - t)
-        f1 = np.array(
-            [
-                np.array(integrate.quad(lambda x: gg(u - x) * gl(x - t), 0, u)[:2])
-                + np.array(integrate.quad(lambda x: gl(u - x) * gl(x - t), u, t)[:2])
-                for u in times
-            ]
-        )
-        f1_err = f1[:, 1]
-        f1 = -f1[:, 0]
-
-        np.testing.assert_array_less(f1_err, 1e-8)
-        np.testing.assert_allclose(f_vals, f0 + V * f1, atol=1e-8)
-        np.testing.assert_allclose((f_vals - f0) / V, f1, atol=1e-5)
-
-    def test_second_order_multicheb(self):
-        gl = lambda x: np.sin(1.5 * x) * np.exp(-((x - 1.0) ** 2) / 3.0)
-        gg = lambda x: np.cos(x + 2.0) * np.exp(-((x + 0.5) ** 2) / 2.0)
-        t = 3.0
-        V = 0.0001
-
-        times, f_vals = xray.solve_quasi_dyson(gl, gg, t, V, 50, method="multicheb")
 
         ### perturbation orders in V
         f0 = gl(times - t)

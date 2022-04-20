@@ -118,50 +118,6 @@ def solve_quasi_dyson(g_less, g_grea, t, V, N, method="trapz"):
         vec_b = g_less(t_array - t)
         return t_array, linalg.solve(mat_M, vec_b)
 
-    elif method == "multicheb":
-        ### WIP
-        K = N
-        M = (N - 1) // (K - 1)
-        N = M * (K - 1) + 1
-        print(M, N)
-        print()
-
-        delta = t / float(M)
-        pts = cheb_points(K, 0.0, delta)
-
-        t_array = np.empty(N, dtype=float)
-        for i in range(M):
-            t_array[i : i + K] = i * delta + pts
-
-        mat_M = np.zeros((N, N), dtype=complex)
-        for j in range(M):
-            for jj in range(K):
-                m = (K - 1) * j + jj
-                # print(m)
-                for i in range(M):
-                    for ii in range(K):
-                        n = ii + (K - 1) * i
-                        print()
-                        for l in range(M):
-                            for ll in range(K):
-                                if i - 2 <= l + j <= i:
-                                    print(ll + (K - 1) * l)
-                                    u_k = t_array[ll + (K - 1) * l]
-                                    mat_M[n, m] += (
-                                        g_grea(u_k)
-                                        * lagrange_integrals_grea[K][jj, ii, ll]
-                                    )
-                                    mat_M[n, m] += (
-                                        g_less(-u_k)
-                                        * lagrange_integrals_less[K][jj, ii, ll]
-                                    )
-
-                mat_M[:, m] *= V * t
-                mat_M[m, m] += 1.0
-
-        vec_b = g_less(t_array - t)
-        return t_array, linalg.solve(mat_M, vec_b)
-
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
         gg = g_grea(t_array) * V * delta
