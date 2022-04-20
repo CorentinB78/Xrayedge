@@ -1,3 +1,3 @@
-from ..solver import PhysicsParameters, AccuracyParameters
+from ..solver import PhysicsParameters, AccuracyParameters, gen_params
 from .xray_edge import XRayEdgeSolver
 from .NCA import NCASolver
