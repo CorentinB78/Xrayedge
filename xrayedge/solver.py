@@ -128,10 +128,11 @@ def gen_params(accuracy_params):
     yield params, "fft_w_max"
 
 
-class GFModel:
+class CorrelatorSolver:
     """
-    Base model for Green function calculation.
-    Only contains basic relations.
+    Solver for computing correlation functions in a finite system capacitively coupled to a reservoir.
+
+    Data is cached after calculation, so parameters should not be changed.
     """
 
     def __init__(self, physics_params=None, accuracy_params=None):
@@ -143,97 +144,6 @@ class GFModel:
             if accuracy_params is not None
             else AccuracyParameters(self.PP, 1.0)
         )
-
-    def weight(self, Q_up, Q_dn):
-        return np.exp(
-            -self.PP.beta
-            * ((self.PP.eps_d - self.PP.mu_d) * (Q_up + Q_dn) + Q_up * Q_dn * self.PP.U)
-        )
-
-    def Z_d(self):
-        """
-        Partition function
-        """
-        return (
-            self.weight(0, 0)
-            + self.weight(1, 0)
-            + self.weight(0, 1)
-            + self.weight(1, 1)
-        )
-
-    def proba(self, Q_up, Q_dn):
-        return self.weight(Q_up, Q_dn) / self.Z_d()
-
-    def A_plus(self, Q, t_array):
-        raise NotImplementedError
-
-    def A_plus_w(self, Q, nr_freqs):
-        raise NotImplementedError
-
-    def A_minus(self, Q, t_array):
-        raise NotImplementedError
-
-    def G_grea(self, t_array):
-        """
-        Greater Green function in times on the QD
-        """
-        prefactor = -1j * np.exp(-1j * t_array * self.PP.eps_d)
-        out = self.proba(0, 0) * self.A_plus(0, t_array)
-        out += (
-            np.exp(-1j * t_array * self.PP.U)
-            * self.proba(0, 1)
-            * self.A_plus(1, t_array)
-        )
-        return prefactor * out
-
-    def G_less(self, t_array):
-        """
-        Lesser Green function in times on the QD
-        """
-        prefactor = 1j * np.exp(-1j * t_array * self.PP.eps_d)
-        out = self.proba(1, 0) * np.conj(self.A_minus(1, t_array))
-        out += (
-            np.exp(-1j * t_array * self.PP.U)
-            * self.proba(1, 1)
-            * np.conj(self.A_minus(2, t_array))
-        )
-        return prefactor * out
-
-    def G_grea_NCA_constraint(self, t_array):
-        """
-        Greater Green function in times on the QD under NCA constrain.
-        """
-        # no U in NCA constraint
-        return (
-            -1j
-            * np.exp(-1j * t_array * self.PP.eps_d)
-            * self.weight(0, 0)
-            * self.A_plus(0, t_array)
-        )
-
-    def G_reta_w_NCA_constraint(self, nr_freqs):
-        """
-        Greater-retarded Green function in frequencies on the QD under NCA constrain.
-
-        For NCA in the steady state regime, one only needs the greater quaisparticle GFs in the sector Q=0 (see notes).
-        Also, the partition function is reduced to 1.
-
-        Returns: freqs, G_grea, energy shift
-        """
-        # no U in NCA constraint
-        w, A_w, energy_shift = self.A_plus_reta_w(0, nr_freqs)
-        return w, -1j * self.weight(0, 0) * A_w, energy_shift - self.PP.eps_d
-
-
-class NumericModel(GFModel):
-    """
-    Model for numerical calculation of correlators and Green functions.
-
-    Data is cached after calculation, so parameters should not be changed.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(NumericModel, self).__init__(*args, **kwargs)
         self.N = 3  # nr of different charge states affecting the QPC
         self._cache_C_interp = [[None] * self.N, [None] * self.N]
         self._cache_C_tail = [[None] * self.N, [None] * self.N]
