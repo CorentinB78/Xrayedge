@@ -3,7 +3,6 @@ from scipy import interpolate
 import toolbox as tb
 from copy import copy
 from .integral_solvers import solve_quasi_dyson, cum_semiinf_adpat_simpson
-from .reservoir import Reservoir, QPC
 
 # TODO write test against asymptotic result
 # TODO parallelize?
@@ -71,11 +70,15 @@ class AccuracyParameters:
         tol_C=1e-2,
         delta_interp_phi=0.05,
         method="trapz",
+        tol_gmres=1e-5,
+        atol_gmres=1e-5,
     ):
         self.time_extrapolate = time_extrapolate
         self.tol_C = tol_C
         self.delta_interp_phi = delta_interp_phi
         self.method = method
+        self.tol_gmres = tol_gmres
+        self.atol_gmres = atol_gmres
 
     def nr_pts_phi(self, t):
         if self.method == "cheb":
@@ -85,7 +88,7 @@ class AccuracyParameters:
         return int(t / self.delta_interp_phi + 3)
 
 
-def gen_params(accuracy_params):
+def gen_params(accuracy_params, gmres=False):
     """
     Generator yielding variations of accuracy parameters for convergence checks.
 
@@ -105,6 +108,15 @@ def gen_params(accuracy_params):
     params = copy(accuracy_params)
     params.delta_interp_phi *= 2.0
     yield params, "delta_interp_phi"
+
+    if gmres:
+        params = copy(accuracy_params)
+        params.tol_gmres *= 4.0
+        yield params, "tol_gmres"
+
+        params = copy(accuracy_params)
+        params.atol_gmres *= 4.0
+        yield params, "atol_gmres"
 
 
 class CorrelatorSolver:
@@ -233,5 +245,7 @@ class CorrelatorSolver:
             sign * self.V,
             self.AP.nr_pts_phi(t),
             method=self.AP.method,
+            tol_gmres=self.AP.tol_gmres,
+            atol_gmres=self.AP.atol_gmres,
         )
         return phi[-1]

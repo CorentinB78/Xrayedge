@@ -67,7 +67,9 @@ def load_lagrange_convol_integrals():
 lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integrals()
 
 
-def solve_quasi_dyson(g_less, g_grea, t, V, N, method="trapz"):
+def solve_quasi_dyson(
+    g_less, g_grea, t, V, N, method="trapz", tol_gmres=1e-5, atol_gmres=1e-5
+):
     """
     Solve the following equation (for 0 <= u <= t):
 
@@ -155,7 +157,7 @@ def solve_quasi_dyson(g_less, g_grea, t, V, N, method="trapz"):
             c[0] += 1.0
             mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
 
-            res, info = gmres(mat_M, vec_b, tol=1e-5, atol=1e-5)
+            res, info = gmres(mat_M, vec_b, tol=tol_gmres, atol=atol_gmres)
             if info > 0:
                 print("/!\ GMRES did not converge.")
             elif info < 0:
