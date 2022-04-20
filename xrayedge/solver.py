@@ -135,20 +135,14 @@ class CorrelatorSolver:
     Data is cached after calculation, so parameters should not be changed.
     """
 
-    def __init__(self, physics_params=None, accuracy_params=None):
-        self.PP = (
-            copy(physics_params) if physics_params is not None else PhysicsParameters()
-        )
-        self.AP = (
-            copy(accuracy_params)
-            if accuracy_params is not None
-            else AccuracyParameters(self.PP, 1.0)
-        )
+    def __init__(self, reservoir, capacitive_coupling, accuracy_params):
+        self.reservoir = reservoir
+        self.V = capacitive_coupling
+        self.AP = copy(accuracy_params)
+
         self.N = 3  # nr of different charge states affecting the QPC
         self._cache_C_interp = [[None] * self.N, [None] * self.N]
         self._cache_C_tail = [[None] * self.N, [None] * self.N]
-
-        self.reservoir = QPC(self.PP, self.AP)
 
     def A_plus(self, Q, times):
         """
@@ -224,8 +218,8 @@ class CorrelatorSolver:
             tol=self.AP.tol_C,
             extend=False,
         )
-        C_vals *= sign * self.PP.capac_inv
-        err *= np.abs(self.PP.capac_inv)
+        C_vals *= sign * self.V
+        err *= np.abs(self.V)
 
         slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
         intercept = C_vals[-1] - slope * times[-1]
@@ -252,7 +246,7 @@ class CorrelatorSolver:
             self.reservoir.g_less_t_fun(Q),
             self.reservoir.g_grea_t_fun(Q),
             t,
-            sign * self.PP.capac_inv,
+            sign * self.V,
             self.AP.nr_pts_phi(t),
             method=self.AP.method,
         )

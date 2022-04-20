@@ -1,6 +1,7 @@
 import numpy as np
 from copy import copy
 from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
+from ..reservoir import QPC
 
 
 class XRayEdgeSolver:
@@ -18,7 +19,9 @@ class XRayEdgeSolver:
             else AccuracyParameters(self.PP, 1.0)
         )
 
-        self.correltor_solver = CorrelatorSolver(self.PP, self.AP)
+        self.correlator_solver = CorrelatorSolver(
+            QPC(self.PP, self.AP), self.PP.capac_inv, self.AP
+        )
 
     def weight(self, Q_up, Q_dn):
         return np.exp(
@@ -45,11 +48,11 @@ class XRayEdgeSolver:
         Greater Green function in times on the QD
         """
         prefactor = -1j * np.exp(-1j * t_array * self.PP.eps_d)
-        out = self.proba(0, 0) * self.correltor_solver.A_plus(0, t_array)
+        out = self.proba(0, 0) * self.correlator_solver.A_plus(0, t_array)
         out += (
             np.exp(-1j * t_array * self.PP.U)
             * self.proba(0, 1)
-            * self.correltor_solver.A_plus(1, t_array)
+            * self.correlator_solver.A_plus(1, t_array)
         )
         return prefactor * out
 
@@ -58,10 +61,10 @@ class XRayEdgeSolver:
         Lesser Green function in times on the QD
         """
         prefactor = 1j * np.exp(-1j * t_array * self.PP.eps_d)
-        out = self.proba(1, 0) * np.conj(self.correltor_solver.A_minus(1, t_array))
+        out = self.proba(1, 0) * np.conj(self.correlator_solver.A_minus(1, t_array))
         out += (
             np.exp(-1j * t_array * self.PP.U)
             * self.proba(1, 1)
-            * np.conj(self.correltor_solver.A_minus(2, t_array))
+            * np.conj(self.correlator_solver.A_minus(2, t_array))
         )
         return prefactor * out

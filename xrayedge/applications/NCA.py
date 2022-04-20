@@ -1,6 +1,7 @@
 import numpy as np
 from copy import copy
 from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
+from ..reservoir import QPC
 
 
 class NCASolver:
@@ -18,7 +19,9 @@ class NCASolver:
             else AccuracyParameters(self.PP, 1.0)
         )
 
-        self.correltor_solver = CorrelatorSolver(self.PP, self.AP)
+        self.correlator_solver = CorrelatorSolver(
+            QPC(self.PP, self.AP), self.PP.capac_inv, self.AP
+        )
 
     def G_grea_NCA_constraint(self, t_array):
         """
@@ -29,7 +32,7 @@ class NCASolver:
             -1j
             * np.exp(-1j * t_array * self.PP.eps_d)
             * self.weight(0, 0)
-            * self.correltor_solver.A_plus(0, t_array)
+            * self.correlator_solver.A_plus(0, t_array)
         )
 
     def G_reta_w_NCA_constraint(self, nr_freqs):
@@ -42,5 +45,5 @@ class NCASolver:
         Returns: freqs, G_grea, energy shift
         """
         # no U in NCA constraint
-        w, A_w, energy_shift = self.correltor_solver.A_plus_reta_w(0, nr_freqs)
+        w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(0, nr_freqs)
         return w, -1j * self.weight(0, 0) * A_w, energy_shift - self.PP.eps_d

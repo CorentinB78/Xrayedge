@@ -5,8 +5,9 @@ import xrayedge as xray
 
 class TestCorrelatorSolver(unittest.TestCase):
     def test_no_coupling(self):
-        solver = xray.CorrelatorSolver()
-        solver.PP.capac_inv = 0.0
+        PP = xray.PhysicsParameters()
+        AP = xray.AccuracyParameters(PP, 1.0)
+        solver = xray.CorrelatorSolver(xray.QPC(PP, AP), 0.0, AP)
         Q = 0
 
         times = np.linspace(0.0, 10.0, 4)
@@ -19,8 +20,9 @@ class TestCorrelatorSolver(unittest.TestCase):
         np.testing.assert_allclose(phi, g_less[idx])
 
     def test_cheb_vs_trapz(self):
-        solver = xray.CorrelatorSolver()
-        solver.AP.time_extrapolate = 10.0
+        PP = xray.PhysicsParameters()
+        AP = xray.AccuracyParameters(PP, 10.0)
+        solver = xray.CorrelatorSolver(xray.QPC(PP, AP), 1.5, AP)
         times = np.linspace(0.0, 10.0, 20)
         Q = 0
 
@@ -49,7 +51,7 @@ class TestCorrelatorSolver(unittest.TestCase):
         AP.tol_C = (1e-2,)
         AP.delta_interp_phi = 0.05
 
-        solver = xray.CorrelatorSolver(PP, AP)
+        solver = xray.CorrelatorSolver(xray.QPC(PP, AP), PP.capac_inv, AP)
         times = np.linspace(0.0, 10.0, 11)
         C = solver.C(0, 0, times)
 
