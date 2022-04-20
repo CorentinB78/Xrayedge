@@ -57,22 +57,21 @@ class PhysicsParameters:
 class AccuracyParameters:
     """
     Parameters for the accuracy of the calculation.
-    Some are derived from the physics parameters.
 
-    methods available: trapz, cheb
-    delta_interp_phi: reduce to increase precision. Should be smaller than timescale of variation of bare g.
+    Parameters:
+        time_extrapolate -- Solve up to this time, extrapolate beyond
+        tol_C -- tolerance in integrating dC/dt = V phi
+        delta_interp_phi -- time step in quasi Dyson solver to compute phi. Should be smaller than timescale of variation of bare g.
+        method -- method for quasi Dyson solver, one of "cheb", "trapz", "trapz-LU", "trapz-GMRES"
     """
 
     def __init__(
         self,
-        physics_params,
         time_extrapolate,
         tol_C=1e-2,
         delta_interp_phi=0.05,
         method="trapz",
     ):
-        self.PP = copy(physics_params)
-
         self.time_extrapolate = time_extrapolate
         self.tol_C = tol_C
         self.delta_interp_phi = delta_interp_phi
@@ -163,6 +162,11 @@ class CorrelatorSolver:
     ######## C and phi #######
 
     def C(self, type, Q, times):
+        """
+        Returns values of C on coordinates `times`.
+
+        Values beyond the extrapolation time are obtained by a linear extrapolation.
+        """
         times = np.asarray(times)
         if self._cache_C_interp[type][Q] is None:
             self.compute_C(type, Q)

@@ -21,7 +21,7 @@ class TestCorrelatorSolver(unittest.TestCase):
 
     def test_cheb_vs_trapz(self):
         PP = xray.PhysicsParameters()
-        AP = xray.AccuracyParameters(PP, 10.0)
+        AP = xray.AccuracyParameters(10.0)
         solver = xray.CorrelatorSolver(xray.QPC(PP), 1.5, AP)
         times = np.linspace(0.0, 10.0, 20)
         Q = 0
@@ -44,7 +44,7 @@ class TestCorrelatorSolver(unittest.TestCase):
         PP.Gamma = 1.0
         PP.U = 0.0
 
-        AP = xray.AccuracyParameters(PP, time_extrapolate=10.0)
+        AP = xray.AccuracyParameters(time_extrapolate=10.0)
         AP.method = "trapz"
         AP.tol_C = (1e-2,)
         AP.delta_interp_phi = 0.05

@@ -64,7 +64,6 @@ class QPC(Reservoir):
 
         Arguments:
             physics_params -- a `PhysicsParameters` instance
-            accuracy_params -- a `AccuracyParameters` instance
 
         Keyword Arguments:
             nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)

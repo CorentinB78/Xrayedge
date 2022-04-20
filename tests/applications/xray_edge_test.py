@@ -11,7 +11,7 @@ class TestXRayEdgeSolver(unittest.TestCase):
         PP.eps_d = 0.0
         PP.bias = 0.0
 
-        AP = AccuracyParameters(PP, time_extrapolate=10.0)
+        AP = AccuracyParameters(time_extrapolate=10.0)
         AP.method = "cheb"
         AP.tol_C = 1e-4
         AP.delta_interp_phi = 0.05
