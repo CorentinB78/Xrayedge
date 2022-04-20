@@ -11,7 +11,7 @@ class TestXrayEdgeSolver(unittest.TestCase):
 
         times = np.linspace(0.0, 10.0, 4)
         phi = np.array([model.phi(0, Q, t) for t in times])
-        g_less = model.g_less_t_fun(Q)(times)
+        g_less = model.reservoir.g_less_t_fun(Q)(times)
 
         idx = np.argmin(np.abs(times))
         assert times[idx] == 0.0

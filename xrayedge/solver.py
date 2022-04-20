@@ -3,6 +3,7 @@ from scipy import interpolate
 import toolbox as tb
 from copy import copy
 from .integral_solvers import solve_pseudo_dyson, cum_semiinf_adpat_simpson
+from .reservoir import Reservoir, QPC
 
 # TODO write test against asymptotic result
 # TODO parallelize?
@@ -234,10 +235,10 @@ class NumericModel(GFModel):
     def __init__(self, *args, **kwargs):
         super(NumericModel, self).__init__(*args, **kwargs)
         self.N = 3  # nr of different charge states affecting the QPC
-        self._cache_g_less_t = [None] * self.N
-        self._cache_g_grea_t = [None] * self.N
         self._cache_C_interp = [[None] * self.N, [None] * self.N]
         self._cache_C_tail = [[None] * self.N, [None] * self.N]
+
+        self.reservoir = QPC(self.PP, self.AP)
 
     def A_plus(self, Q, times):
         """
@@ -335,101 +336,14 @@ class NumericModel(GFModel):
         """
         assert t >= 0.0
         if np.abs(t) < 1e-10:
-            return self.g_less_t_fun(Q)(0.0)
+            return self.reservoir.g_less_t_fun(Q)(0.0)
 
         times, phi = solve_pseudo_dyson(
-            self.g_less_t_fun(Q),
-            self.g_grea_t_fun(Q),
+            self.reservoir.g_less_t_fun(Q),
+            self.reservoir.g_grea_t_fun(Q),
             t,
             sign * self.PP.capac_inv,
             self.AP.nr_pts_phi(t),
             method=self.AP.method,
         )
         return phi[-1]
-
-    ######## bare GF #########
-
-    def delta_leads_R(self, w_array):
-        """
-        Retarded hybridization function in frequencies for left and right leads (together) of QPC.
-        """
-        return -1j * self.PP.Gamma * np.ones_like(w_array)
-
-    def delta_leads_K(self, w_array):
-        """
-        Keldysh hybridization function in frequencies for left and right leads (together) of QPC.
-        """
-        return (
-            -2j
-            * (
-                tb.fermi(w_array, self.PP.mu_c + 0.5 * self.PP.bias, self.PP.beta)
-                + tb.fermi(w_array, self.PP.mu_c - 0.5 * self.PP.bias, self.PP.beta)
-                - 1.0
-            )
-            * np.imag(self.delta_leads_R(w_array))
-        )
-
-    def g_reta(self, w_array, Q):
-        """
-        Retarded GF in frequencies of QPC's central site.
-        """
-        return 1.0 / (
-            w_array
-            - self.PP.eps_c
-            - Q * self.PP.capac_inv
-            - self.delta_leads_R(w_array)
-        )
-
-    def g_keld(self, w_array, Q):
-        """
-        Keldysh GF in frequencies of QPC's central site.
-        """
-        return np.abs(self.g_reta(w_array, Q)) ** 2 * self.delta_leads_K(w_array)
-
-    def g_less(self, w_array, Q):
-        """
-        Lesser GF in frequencies of QPC's central site.
-        """
-        return np.abs(self.g_reta(w_array, Q)) ** 2 * (
-            0.5 * self.delta_leads_K(w_array)
-            - 1.0j * np.imag(self.delta_leads_R(w_array))
-        )
-
-    def g_grea(self, w_array, Q):
-        """
-        Greater GF in frequencies of QPC's central site.
-        """
-        return np.abs(self.g_reta(w_array, Q)) ** 2 * (
-            0.5 * self.delta_leads_K(w_array)
-            + 1.0j * np.imag(self.delta_leads_R(w_array))
-        )
-
-    def g_less_t_fun(self, Q):
-        """
-        Lesser GF in times of QPC's central site.
-
-        Returns a (cached) function
-        """
-        if self._cache_g_less_t[Q] is None:
-            g_less = self.g_less(self.AP.omegas_fft(), Q=Q)
-
-            times, g_less_t = tb.inv_fourier_transform(self.AP.omegas_fft(), g_less)
-
-            self._cache_g_less_t[Q] = interpolate.CubicSpline(times, g_less_t)
-
-        return self._cache_g_less_t[Q]
-
-    def g_grea_t_fun(self, Q):
-        """
-        Greater GF in times of QPC's central site.
-
-        Returns a (cached) function
-        """
-        if self._cache_g_grea_t[Q] is None:
-            g_grea = self.g_grea(self.AP.omegas_fft(), Q=Q)
-
-            times, g_grea_t = tb.inv_fourier_transform(self.AP.omegas_fft(), g_grea)
-
-            self._cache_g_grea_t[Q] = interpolate.CubicSpline(times, g_grea_t)
-
-        return self._cache_g_grea_t[Q]
