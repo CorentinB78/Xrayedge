@@ -47,4 +47,4 @@ class NCASolver:
         """
         # no U in NCA constraint
         w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(0, nr_freqs)
-        return w, -1j * A_w, energy_shift - self.PP.eps_d
+        return w, -1j * A_w, energy_shift + self.PP.eps_d
