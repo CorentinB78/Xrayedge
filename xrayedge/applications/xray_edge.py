@@ -20,7 +20,7 @@ class XRayEdgeSolver:
         )
 
         self.correlator_solver = CorrelatorSolver(
-            QPC(self.PP, self.AP), self.PP.capac_inv, self.AP
+            QPC(self.PP), self.PP.capac_inv, self.AP
         )
 
     def weight(self, Q_up, Q_dn):

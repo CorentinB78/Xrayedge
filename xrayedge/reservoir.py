@@ -56,7 +56,7 @@ class Reservoir:
 
 
 class QPC(Reservoir):
-    def __init__(self, physics_params, accuracy_params):
+    def __init__(self, physics_params, nr_samples_fft=None, w_max=None):
         """
         Quantum Point Contact. A type of reservoir with a central site coupled to two baths with a chemical potential difference.
 
@@ -65,10 +65,41 @@ class QPC(Reservoir):
         Arguments:
             physics_params -- a `PhysicsParameters` instance
             accuracy_params -- a `AccuracyParameters` instance
+
+        Keyword Arguments:
+            nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
+            w_max -- max frequency for FFT (default: {None} which auto determine an optimal value)
         """
         super().__init__()
         self.PP = copy(physics_params)
-        self.AP = copy(accuracy_params)
+
+        spreads = np.array([self.PP.Gamma, 1.0 / self.PP.beta])
+        centers = np.array(
+            [
+                self.PP.eps_c,
+                self.PP.mu_c + 0.5 * self.PP.bias,
+                self.PP.mu_c - 0.5 * self.PP.bias,
+            ]
+        )
+
+        if w_max is None:
+            w_max = np.max(np.abs(centers[:, None] + spreads[None, :]))
+            w_max = 100 * max(
+                w_max, np.max(np.abs(centers[:, None] - spreads[None, :]))
+            )
+        self.w_max = w_max
+
+        if nr_samples_fft is None:
+            dw = np.min(spreads) / 100.0
+            self.N_fft = int(2 * w_max / dw + 0.5)
+        else:
+            self.N_fft = nr_samples_fft
+
+        if self.N_fft >= int(1e6):
+            print(
+                f"/!\ [Reservoir] FFT requires {self.N_fft} grid points. Capped to 10^6."
+            )
+            self.N_fft = int(1e6)
 
     def delta_leads_R(self, w_array):
         """
@@ -129,16 +160,18 @@ class QPC(Reservoir):
         """
         Lesser GF in times of contact site.
         """
-        g_less = self.g_less(self.AP.omegas_fft(), Q=Q)
+        w = np.linspace(-self.w_max, self.w_max, self.N_fft)
+        g_less = self.g_less(w, Q=Q)
 
-        times, g_less_t = tb.inv_fourier_transform(self.AP.omegas_fft(), g_less)
+        times, g_less_t = tb.inv_fourier_transform(w, g_less)
         return times, g_less_t
 
     def g_grea_t(self, Q):
         """
         Greater GF in times of contact site.
         """
-        g_grea = self.g_grea(self.AP.omegas_fft(), Q=Q)
+        w = np.linspace(-self.w_max, self.w_max, self.N_fft)
+        g_grea = self.g_grea(w, Q=Q)
 
-        times, g_grea_t = tb.inv_fourier_transform(self.AP.omegas_fft(), g_grea)
+        times, g_grea_t = tb.inv_fourier_transform(w, g_grea)
         return times, g_grea_t

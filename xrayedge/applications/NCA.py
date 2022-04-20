@@ -20,7 +20,7 @@ class NCASolver:
         )
 
         self.correlator_solver = CorrelatorSolver(
-            QPC(self.PP, self.AP), self.PP.capac_inv, self.AP
+            QPC(self.PP), self.PP.capac_inv, self.AP
         )
 
     def G_grea_NCA_constraint(self, t_array):

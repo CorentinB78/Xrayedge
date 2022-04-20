@@ -60,7 +60,6 @@ class AccuracyParameters:
     Some are derived from the physics parameters.
 
     methods available: trapz, cheb
-    fft_w_max is in unit of Gamma
     delta_interp_phi: reduce to increase precision. Should be smaller than timescale of variation of bare g.
     """
 
@@ -68,8 +67,6 @@ class AccuracyParameters:
         self,
         physics_params,
         time_extrapolate,
-        fft_nr_samples=50000,
-        fft_w_max=50.0,
         tol_C=1e-2,
         delta_interp_phi=0.05,
         method="trapz",
@@ -77,17 +74,9 @@ class AccuracyParameters:
         self.PP = copy(physics_params)
 
         self.time_extrapolate = time_extrapolate
-        self.fft_nr_samples = fft_nr_samples
-        self.fft_w_max = fft_w_max  # in unit of Gamma
         self.tol_C = tol_C
         self.delta_interp_phi = delta_interp_phi
         self.method = method
-
-    def omegas_fft(self):
-        w_max = self.fft_w_max * self.PP.Gamma
-        return np.linspace(
-            -w_max, w_max, tb.misc._next_regular(int(self.fft_nr_samples))
-        )
 
     def nr_pts_phi(self, t):
         if self.method == "cheb":
@@ -117,15 +106,6 @@ def gen_params(accuracy_params):
     params = copy(accuracy_params)
     params.delta_interp_phi *= 2.0
     yield params, "delta_interp_phi"
-
-    params = copy(accuracy_params)
-    params.fft_nr_samples /= 2
-    yield params, "fft_nr_samples"
-
-    params = copy(accuracy_params)
-    params.fft_w_max /= 2.0
-    params.fft_nr_samples /= 2
-    yield params, "fft_w_max"
 
 
 class CorrelatorSolver:

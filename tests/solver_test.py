@@ -7,7 +7,7 @@ class TestCorrelatorSolver(unittest.TestCase):
     def test_no_coupling(self):
         PP = xray.PhysicsParameters()
         AP = xray.AccuracyParameters(PP, 1.0)
-        solver = xray.CorrelatorSolver(xray.QPC(PP, AP), 0.0, AP)
+        solver = xray.CorrelatorSolver(xray.QPC(PP), 0.0, AP)
         Q = 0
 
         times = np.linspace(0.0, 10.0, 4)
@@ -22,7 +22,7 @@ class TestCorrelatorSolver(unittest.TestCase):
     def test_cheb_vs_trapz(self):
         PP = xray.PhysicsParameters()
         AP = xray.AccuracyParameters(PP, 10.0)
-        solver = xray.CorrelatorSolver(xray.QPC(PP, AP), 1.5, AP)
+        solver = xray.CorrelatorSolver(xray.QPC(PP), 1.5, AP)
         times = np.linspace(0.0, 10.0, 20)
         Q = 0
 
@@ -46,12 +46,10 @@ class TestCorrelatorSolver(unittest.TestCase):
 
         AP = xray.AccuracyParameters(PP, time_extrapolate=10.0)
         AP.method = "trapz"
-        AP.fft_w_max = 100.0
-        AP.fft_nr_samples = 100000
         AP.tol_C = (1e-2,)
         AP.delta_interp_phi = 0.05
 
-        solver = xray.CorrelatorSolver(xray.QPC(PP, AP), PP.capac_inv, AP)
+        solver = xray.CorrelatorSolver(xray.QPC(PP), PP.capac_inv, AP)
         times = np.linspace(0.0, 10.0, 11)
         C = solver.C(0, 0, times)
 

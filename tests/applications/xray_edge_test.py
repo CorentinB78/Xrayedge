@@ -13,8 +13,6 @@ class TestXRayEdgeSolver(unittest.TestCase):
 
         AP = AccuracyParameters(PP, time_extrapolate=10.0)
         AP.method = "cheb"
-        AP.fft_w_max = 500.0
-        AP.fft_nr_samples = 500000
         AP.tol_C = 1e-4
         AP.delta_interp_phi = 0.05
 
