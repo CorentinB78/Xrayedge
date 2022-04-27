@@ -38,7 +38,9 @@ class Reservoir:
         """
         if self._cache_g_less_t[Q] is None:
             times, g_less_t = self.g_less_t(Q)
-            self._cache_g_less_t[Q] = interpolate.CubicSpline(times, g_less_t)
+            self._cache_g_less_t[Q] = interpolate.CubicSpline(
+                times, g_less_t, extrapolate=False
+            )
 
         return self._cache_g_less_t[Q]
 
@@ -50,7 +52,9 @@ class Reservoir:
         """
         if self._cache_g_grea_t[Q] is None:
             times, g_grea_t = self.g_grea_t(Q)
-            self._cache_g_grea_t[Q] = interpolate.CubicSpline(times, g_grea_t)
+            self._cache_g_grea_t[Q] = interpolate.CubicSpline(
+                times, g_grea_t, extrapolate=False
+            )
 
         return self._cache_g_grea_t[Q]
 
