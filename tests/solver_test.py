@@ -37,10 +37,10 @@ class TestCorrelatorSolver(unittest.TestCase):
     def test_nonreg(self):
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
-        PP.bias = 0.0
+        PP.bias_QPC = 0.0
         PP.capac_inv = 1.0
-        PP.eps_c = 0.0
-        PP.eps_d = 0.0
+        PP.eps_QPC = 0.0
+        PP.eps_QD = 0.0
         PP.Gamma = 1.0
         PP.U = 0.0
 

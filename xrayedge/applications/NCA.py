@@ -4,6 +4,7 @@ from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
 from ..reservoir import QPC
 
 # TODO: rename
+# TODO: test energy shifts
 
 
 class NCASolver:
@@ -32,7 +33,7 @@ class NCASolver:
         # no U in NCA constraint
         return (
             -1j
-            * np.exp(-1j * t_array * self.PP.eps_d)
+            * np.exp(-1j * t_array * self.PP.eps_QD)
             * self.correlator_solver.A_plus(0, t_array)
         )
 
@@ -47,4 +48,4 @@ class NCASolver:
         """
         # no U in NCA constraint
         w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(0, nr_freqs)
-        return w, -1j * A_w, energy_shift + self.PP.eps_d
+        return w, -1j * A_w, energy_shift + self.PP.eps_QD

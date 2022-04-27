@@ -21,6 +21,9 @@ class Parameters:
         return out
 
 
+# TODO: Reorganize parameters. Current ones are specialized for QPC.
+
+
 class PhysicsParameters(Parameters):
     """
     Parameters of the Hamiltonian and statistics.
@@ -29,25 +32,25 @@ class PhysicsParameters(Parameters):
     def __init__(
         self,
         beta=1.0,
-        mu_d=0.0,
-        bias=0.0,
+        mu_QD=0.0,
+        bias_QPC=0.0,
         V_cap=1.0,
-        eps_d=0.0,
-        eps_c=0.0,
-        mu_c=0.0,
-        Gamma=1.0,
+        eps_QD=0.0,
+        eps_QPC=0.0,
+        mu_QPC=0.0,
+        D_QPC=1.0,
         U=0.0,
     ):
         self.beta = beta
-        self.mu_d = (
-            mu_d  # chemical potential on the QD TODO: remove if redondant with eps_d
+        self.mu_QD = (
+            mu_QD  # chemical potential on the QD TODO: remove if redondant with eps_QD
         )
-        self.bias = bias
+        self.bias_QPC = bias_QPC
         self.capac_inv = V_cap  # = dV/dQ
-        self.eps_d = eps_d  # on the QD
-        self.eps_c = eps_c  # on the QPC
-        self.mu_c = mu_c
-        self.Gamma = Gamma
+        self.eps_QD = eps_QD  # on the QD
+        self.eps_QPC = eps_QPC  # on the QPC
+        self.mu_QPC = mu_QPC
+        self.D_QPC = D_QPC
         self.U = U
 
         # nr_channels = 4
@@ -59,7 +62,7 @@ class PhysicsParameters(Parameters):
         #     return np.arctan(np.pi * self.lambda_phi * self.Fermi_dos())
 
         # def Fermi_dos(self):
-        #     return self.Gamma / (self.eps_d**2 + self.Gamma**2) / np.pi
+        #     return self.D_QPC / (self.eps_QD**2 + self.D_QPC**2) / np.pi
 
 
 class AccuracyParameters(Parameters):
