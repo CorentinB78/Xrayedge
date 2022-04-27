@@ -12,7 +12,16 @@ from .integral_solvers import solve_quasi_dyson, cum_semiinf_adpat_simpson
 ############## Model ###############
 
 
-class PhysicsParameters:
+class Parameters:
+    def __repr__(self):
+        out = "Parameters object containing:\n"
+        for key, val in self.__dict__.items():
+            out += f"{key} = {val}\n"
+
+        return out
+
+
+class PhysicsParameters(Parameters):
     """
     Parameters of the Hamiltonian and statistics.
     """
@@ -53,7 +62,7 @@ class PhysicsParameters:
         #     return self.Gamma / (self.eps_d**2 + self.Gamma**2) / np.pi
 
 
-class AccuracyParameters:
+class AccuracyParameters(Parameters):
     """
     Parameters for the accuracy of the calculation.
 
@@ -223,7 +232,7 @@ class CorrelatorSolver:
         C_interp = interpolate.CubicSpline(
             *tb.symmetrize(times, C_vals, 0.0, lambda x: np.conj(x)),
             bc_type="natural",
-            extrapolate=False
+            extrapolate=False,
         )
         self._cache_C_interp[type][Q] = C_interp
         self._cache_C_tail[type][Q] = (intercept, slope)
