@@ -53,17 +53,6 @@ class PhysicsParameters(Parameters):
         self.D_QPC = D_QPC
         self.U = U
 
-        # nr_channels = 4
-        # lambda_phi = 1. # = capac ?
-        # lambda_chi = 0. # = capac ?
-        # ksi_0 = 10.
-
-        # def delta_phi(self):
-        #     return np.arctan(np.pi * self.lambda_phi * self.Fermi_dos())
-
-        # def Fermi_dos(self):
-        #     return self.D_QPC / (self.eps_QD**2 + self.D_QPC**2) / np.pi
-
 
 class AccuracyParameters(Parameters):
     """
