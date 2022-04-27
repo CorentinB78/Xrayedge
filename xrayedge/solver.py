@@ -112,11 +112,11 @@ def gen_params(accuracy_params, gmres=False):
 
     if gmres:
         params = copy(accuracy_params)
-        params.tol_gmres *= 4.0
+        params.tol_gmres *= 10.0
         yield params, "tol_gmres"
 
         params = copy(accuracy_params)
-        params.atol_gmres *= 4.0
+        params.atol_gmres *= 10.0
         yield params, "atol_gmres"
 
 
