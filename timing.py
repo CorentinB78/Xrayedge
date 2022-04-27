@@ -16,7 +16,7 @@ PP.bias_QPC = 0.0
 PP.eps_QPC = 0.0  # on the QPC
 PP.mu_QPC = 0.0
 PP.Gamma = 1.0
-PP.capac_inv = 5.0  # = dV/dQ
+PP.V_cap = 5.0  # = dV/dQ
 
 tmax = 100.0
 

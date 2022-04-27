@@ -7,7 +7,7 @@ class TestXRayEdgeSolver(unittest.TestCase):
     def test_nonreg_GF(self):
         PP = PhysicsParameters()
         PP.beta = 0.1
-        PP.capac_inv = 1.5
+        PP.V_cap = 1.5
         PP.eps_QD = 0.0
         PP.bias_QPC = 0.0
 

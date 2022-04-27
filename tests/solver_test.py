@@ -38,7 +38,7 @@ class TestCorrelatorSolver(unittest.TestCase):
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
         PP.bias_QPC = 0.0
-        PP.capac_inv = 1.0
+        PP.V_cap = 1.0
         PP.eps_QPC = 0.0
         PP.eps_QD = 0.0
         PP.Gamma = 1.0
@@ -49,7 +49,7 @@ class TestCorrelatorSolver(unittest.TestCase):
         AP.tol_C = (1e-2,)
         AP.delta_interp_phi = 0.05
 
-        solver = xray.CorrelatorSolver(xray.QPC(PP), PP.capac_inv, AP)
+        solver = xray.CorrelatorSolver(xray.QPC(PP), PP.V_cap, AP)
         times = np.linspace(0.0, 10.0, 11)
         C = solver.C(0, 0, times)
 

@@ -46,7 +46,7 @@ class PhysicsParameters(Parameters):
             mu_QD  # chemical potential on the QD TODO: remove if redondant with eps_QD
         )
         self.bias_QPC = bias_QPC
-        self.capac_inv = V_cap  # = dV/dQ
+        self.V_cap = V_cap  # = dV/dQ
         self.eps_QD = eps_QD  # on the QD
         self.eps_QPC = eps_QPC  # on the QPC
         self.mu_QPC = mu_QPC

@@ -19,9 +19,7 @@ class XRayEdgeSolver:
             else AccuracyParameters(self.PP, 1.0)
         )
 
-        self.correlator_solver = CorrelatorSolver(
-            QPC(self.PP), self.PP.capac_inv, self.AP
-        )
+        self.correlator_solver = CorrelatorSolver(QPC(self.PP), self.PP.V_cap, self.AP)
 
     def weight(self, Q_up, Q_dn):
         return np.exp(

@@ -22,9 +22,7 @@ class NCASolver:
             else AccuracyParameters(self.PP, 1.0)
         )
 
-        self.correlator_solver = CorrelatorSolver(
-            QPC(self.PP), self.PP.capac_inv, self.AP
-        )
+        self.correlator_solver = CorrelatorSolver(QPC(self.PP), self.PP.V_cap, self.AP)
 
     def G_grea(self, t_array):
         """
