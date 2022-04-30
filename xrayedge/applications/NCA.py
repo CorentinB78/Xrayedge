@@ -19,7 +19,7 @@ class NCASolver:
         self.AP = (
             copy(accuracy_params)
             if accuracy_params is not None
-            else AccuracyParameters(self.PP, 1.0)
+            else AccuracyParameters(1.0)
         )
 
         self.correlator_solver = CorrelatorSolver(QPC(self.PP), self.PP.V_cap, self.AP)
