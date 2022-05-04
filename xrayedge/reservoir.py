@@ -60,7 +60,9 @@ class Reservoir:
 
 
 class QPC(Reservoir):
-    def __init__(self, physics_params, nr_samples_fft=None, w_max=None):
+    def __init__(
+        self, physics_params, nr_samples_fft=None, w_max=None, max_fft_size=int(1e7)
+    ):
         """
         Quantum Point Contact. A type of reservoir with a central site coupled to two baths with a chemical potential difference.
 
@@ -92,20 +94,21 @@ class QPC(Reservoir):
             )
         self.w_max = w_max
 
+        dw = np.min(spreads) / 100.0
+        ideal_N_fft = int(2 * w_max / dw + 0.5)
+
         if nr_samples_fft is None:
-            dw = np.min(spreads) / 100.0
-            self.N_fft = int(2 * w_max / dw + 0.5)
-
-            if self.N_fft >= int(1e6):
-                r = self.N_fft / 1e6
-                self.w_max = self.w_max / np.sqrt(r)
-                dw = dw * np.sqrt(r)
-                print(f"/!\ [Reservoir] FFT requires {self.N_fft} grid points.")
-                self.N_fft = int(2 * self.w_max / dw + 0.5)
-                print(f"Change to {self.N_fft} grid points.")
-
+            self.N_fft = ideal_N_fft
         else:
             self.N_fft = nr_samples_fft
+
+        if self.N_fft >= max_fft_size:
+            r = self.N_fft / max_fft_size
+            self.w_max = self.w_max / np.sqrt(r)
+            dw = dw * np.sqrt(r)
+            print(f"/!\ [Reservoir] FFT requires {self.N_fft} grid points.")
+            self.N_fft = int(2 * self.w_max / dw + 0.5)
+            print(f"Change to {self.N_fft} grid points.")
 
     def delta_leads_R(self, w_array):
         """
