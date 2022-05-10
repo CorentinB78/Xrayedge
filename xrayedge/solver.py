@@ -4,7 +4,6 @@ import toolbox as tb
 from copy import copy
 from .integral_solvers import solve_quasi_dyson, cum_semiinf_adpat_simpson
 
-# TODO write test against asymptotic result
 # TODO parallelize?
 # TODO cleanup notes!
 

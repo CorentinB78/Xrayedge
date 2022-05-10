@@ -72,5 +72,42 @@ class TestCorrelatorSolver(unittest.TestCase):
         np.testing.assert_allclose(C, C_ref, rtol=1e-3)
 
 
+class TestCompareWithAnalytic(unittest.TestCase):
+    def test(self):
+        """
+        Compare the slope of Re[C(t)] at long times to exact value.
+
+        An exact analytical result is know at equilibrium, see e.g. Eq.(11) in
+        https://doi.org/10.1103/PhysRevLett.79.3740. Here however, the factor 4
+        is replaced with 1 (we have only one channel in the QPC) and $\lambda_{\phi}$
+        is V_cap / v_F, where v_F is the Fermi velocity. For a 1D chain,
+        v_F = 1 / (pi * rho) with rho the density of states at the Fermi level.
+        """
+
+        PP = xray.PhysicsParameters()
+        PP.beta = 10.0
+        PP.V_cap = 1.0
+        PP.bias_QPC = 0.0
+        PP.eps_QPC = 0.0
+        PP.mu_QPC = 0.0
+        PP.D_QPC = 3.0
+
+        AP = xray.AccuracyParameters(time_extrapolate=100.0)
+        AP.tol_C = 0.0001
+        AP.delta_interp_phi = 0.01
+        AP.method = "trapz"
+        AP.nr_samples_fft = int(1e6)
+
+        CS = xray.CorrelatorSolver(xray.QPC(PP), PP.V_cap, AP)
+        tt = np.linspace(0, 100, 1000)
+        C_vals = CS.C(0, 0, tt)
+        slope_real = (C_vals[-1].real - C_vals[-2].real) / (tt[-1] - tt[-2])
+
+        v_fermi = -1.0 / CS.reservoir.g_reta(np.asarray([PP.mu_QPC]), Q=0)[0].imag
+        slope_real_ref = -np.arctan(PP.V_cap / v_fermi) ** 2 / (PP.beta * np.pi)
+
+        self.assertAlmostEqual(slope_real, slope_real_ref, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
