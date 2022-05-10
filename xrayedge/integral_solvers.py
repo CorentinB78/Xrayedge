@@ -88,7 +88,7 @@ def solve_quasi_dyson(
         method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
 
     Returns:
-        (grid_pts, f_values) a pair of coordiantes and corresponding values for f
+        (grid_pts, f_values) a pair of coordinates and corresponding values for f
     """
     assert t > 0.0
     assert N > 1
