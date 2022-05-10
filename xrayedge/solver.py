@@ -179,6 +179,14 @@ class CorrelatorSolver:
         Returns values of C on coordinates `times`.
 
         Values beyond the extrapolation time are obtained by a linear extrapolation.
+
+        Arguments:
+            type -- 0 or 1, resp. for A^+ or A^- process
+            Q -- integer, occupation of QD
+            times -- 1D array
+
+        Returns:
+            C_vals -- a 1D array
         """
         times = np.asarray(times)
         if self._cache_C_interp[type][Q] is None:
