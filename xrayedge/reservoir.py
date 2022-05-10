@@ -184,3 +184,9 @@ class QPC(Reservoir):
 
         times, g_grea_t = tb.inv_fourier_transform(w, g_grea)
         return times, g_grea_t
+
+    def occupation(self, Q):
+        w, dw = np.linspace(-self.w_max, self.w_max, self.N_fft, retstep=True)
+        g_less = self.g_less(w, Q=Q)
+
+        return np.trapz(y=g_less.imag, dx=dw) / (2 * np.pi)
