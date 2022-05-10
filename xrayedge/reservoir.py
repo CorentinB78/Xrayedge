@@ -136,6 +136,7 @@ class QPC(Reservoir):
         """
         Retarded GF in frequencies of QPC's central site.
         """
+        w_array = np.asarray(w_array)
         return 1.0 / (
             w_array - self.PP.eps_QPC - Q * self.PP.V_cap - self.delta_leads_R(w_array)
         )
