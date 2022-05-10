@@ -222,7 +222,7 @@ class CorrelatorSolver:
             tol=self.AP.tol_C,
             extend=False,
         )
-        C_vals *= sign * self.V
+        C_vals *= -sign * self.V
         err *= np.abs(self.V)
 
         slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
@@ -250,7 +250,7 @@ class CorrelatorSolver:
             self.reservoir.g_less_t_fun(Q),
             self.reservoir.g_grea_t_fun(Q),
             t,
-            sign * self.V,
+            -sign * self.V,
             self.AP.nr_pts_phi(t),
             method=self.AP.method,
             tol_gmres=self.AP.tol_gmres,
