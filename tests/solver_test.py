@@ -1,6 +1,8 @@
 import unittest
 import numpy as np
+from numpy import testing
 import xrayedge as xray
+import toolbox as tb
 
 
 class TestCorrelatorSolver(unittest.TestCase):
@@ -72,6 +74,35 @@ class TestCorrelatorSolver(unittest.TestCase):
         np.testing.assert_allclose(C, C_ref, rtol=1e-3)
 
 
+class TestAPlusReta(unittest.TestCase):
+    def test_energy_shift(self):
+
+        PP = xray.PhysicsParameters()
+        PP.beta = 10.0
+        PP.V_cap = 0.1
+        PP.bias_QPC = 0.0
+        PP.eps_QPC = 0.0
+        PP.mu_QPC = 0.0
+        PP.D_QPC = 3.0
+
+        AP = xray.AccuracyParameters(time_extrapolate=100.0)
+        AP.tol_C = 0.0001
+        AP.delta_interp_phi = 0.01
+        AP.method = "trapz"
+        AP.nr_samples_fft = int(1e6)
+
+        CS = xray.CorrelatorSolver(xray.QPC(PP), PP.V_cap, AP)
+
+        freqs, A_reta_w, en_shift = CS.A_plus_reta_w(0, 10000)
+
+        times, A_time = tb.inv_fourier_transform(freqs + en_shift, A_reta_w)
+        mask = times > 0.0
+
+        testing.assert_allclose(
+            A_time[mask], np.exp(CS.C(0, 0, times[mask])), atol=1e-5
+        )
+
+
 class TestCompareWithAnalytic(unittest.TestCase):
     def test(self):
         """
@@ -107,6 +138,53 @@ class TestCompareWithAnalytic(unittest.TestCase):
         slope_real_ref = -np.arctan(PP.V_cap / v_fermi) ** 2 / (PP.beta * np.pi)
 
         self.assertAlmostEqual(slope_real, slope_real_ref, 2)
+
+
+class TestRenormalizedEnergies(unittest.TestCase):
+    def test(self):
+        """
+        When fluctuations can be neglected, the long time slope of Im[C(t)] can be interpreted as a shift in the QD energy levels.
+
+        In the empty QD case, the QD retarded GF is just $G^R(t) = e^{-i E_d t} A^+_0(t)$.
+        We also expect to see at long times $G^R(t) = e^{-i (E_d + V_c <n_{QPC}>) t}$, so that
+        $A^+_0(t) = e^{-i V_c <n_{QPC}> t}$ at long times.
+
+        In the full (spinless) QD case, we have $G^R(t) = e^{-i E_d t} A^-_1(t)^*$.
+        Similarly, we also expect to see at long times $A^-_1(t) = e^{-i V_c <n_{QPC}> t}$.
+
+        We take small V_cap to avoid transmission of QPC fluctuations to the QD.
+        """
+        PP = xray.PhysicsParameters()
+        PP.beta = 10.0
+        PP.V_cap = 0.1
+        PP.bias_QPC = 0.0
+        PP.eps_QPC = 0.0
+        PP.mu_QPC = 0.0
+        PP.D_QPC = 3.0
+
+        AP = xray.AccuracyParameters(time_extrapolate=100.0)
+        AP.tol_C = 0.0001
+        AP.delta_interp_phi = 0.01
+        AP.method = "trapz"
+        AP.nr_samples_fft = int(1e6)
+
+        CS = xray.CorrelatorSolver(xray.QPC(PP), PP.V_cap, AP)
+        qpc = CS.reservoir
+        tt = np.linspace(0, 100, 1000)
+
+        # Q=0, empty QD
+        n_QPC = qpc.occupation(Q=0.0)
+
+        C_vals = CS.C(0, 0, tt)
+        slope_imag = (C_vals[-1].imag - C_vals[-2].imag) / (tt[-1] - tt[-2])
+        self.assertAlmostEqual(slope_imag, -n_QPC * PP.V_cap, 2)
+
+        # Q=1, full spinless QD
+        n_QPC = qpc.occupation(Q=1.0)
+
+        C_vals = CS.C(1, 1, tt)
+        slope_imag = (C_vals[-1].imag - C_vals[-2].imag) / (tt[-1] - tt[-2])
+        self.assertAlmostEqual(slope_imag, n_QPC * PP.V_cap, 2)
 
 
 if __name__ == "__main__":
