@@ -1,0 +1,356 @@
+\documentclass[12pt]{article}
+
+\usepackage[a4paper,margin=1.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{physics}
+\usepackage{chemformula}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage[title,toc]{appendix}
+\usepackage[style=phys,eprint=true]{biblatex}
+\usepackage[smaller,nolist]{acronym}
+
+\addbibresource{/home/corentin/Work/biblio-jabref/all-references.bib}
+
+\newcommand\TODO[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand\Tc{T_{\mathcal C}}
+\newcommand\intc{\int_{\mathcal C}}
+
+\newcommand\up{\uparrow}
+\newcommand\dn{\downarrow}
+\newcommand\nodag{{\vphantom{\dagger}}}
+%\DeclareMathOperator{\Arg}{Arg}
+
+\begin{document}
+
+\title{Solution of X-ray edge problem}
+\author{Corentin Bertrand}
+
+\maketitle
+
+%\begin{abstract}
+%    Abstract text
+%\end{abstract}
+
+%\tableofcontents
+
+
+\begin{acronym}
+	\acro{GF}{Green Function}
+	\acro{QQMC}{Quantum Quasi-Monte Carlo}
+\end{acronym}
+
+\section{References}
+
+The reference: \cite{NozieresDeDominicis1969}. Related: \cite{Roulet1969, NozieresRoulet1969}
+
+Non equilibrium version: \cite{Aleiner1997}
+
+\section{The problem}
+
+\TODO{Generalize to larger impurities}
+
+Hamiltonian:
+\begin{align}
+	H_V ={}& H_c + H_d + V c^\dagger c \, d_\sigma^\dagger d_\sigma
+	\\
+	H_c ={}& \sum_k \qty( \varepsilon_k c_k^\dagger c_k + \gamma_k c_k^\dagger c + \gamma_k c^\dagger c_k)
+	\\
+	H_d ={}& E_d d_\sigma^\dagger d_\sigma + U d_\up^\dag d_\up^\nodag d_\dn^\dag d_\dn^\nodag
+	\\
+	H_Q ={}& H_c + QV c^\dag c
+\end{align}
+where all are fermions. We use a Keldysh formalism where $V$ is turned on at $t=0$ and the initial state is described by the density matrix
+\begin{equation}
+	\rho = \rho_c \; \rho_d
+\end{equation}
+with $\rho_c$ a non-equilibrium state of $H_c$ with partition function $Z_c$, and $\rho_d = e^{-\beta(H_d - \mu N_d)} / Z_d$ an equilibrium state of $H_d$ with partition function $Z_d = 1 + 2e^{-\beta(E_d - \mu)} + e^{-\beta(2(E_d - \mu) + U)}$. We will use $Z_0 = Z_c \; Z_d$.
+
+We want the Green functions for $d_\sigma$ and for $c$.
+
+We will call QPC the $c$ subsystem and QD the $d$ subsystem.
+
+\subsection{Green function for $d_\sigma$}
+
+In the following we drop the spin index when irrelevant.
+
+Let's work out the lesser \ac{GF}:
+\begin{align}
+	-i G^<_d(t, t') ={}& \expval{\tilde d_\up^\dagger(t') \tilde d_\up(t)}
+	\\
+	={}& \Tr \qty[\rho \; U^\dagger(t') e^{it'(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up^\dagger U(t') U^\dagger(t) d_\up e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} U(t)]
+	\\
+	={}& \sum_{Q_\up, Q_\dn=0,1} \!\!\!\! P(Q_\up, Q_\dn) \Tr_c \qty[\rho_c \; \bra{Q_\up, Q_\dn} U^\dagger(t') e^{it'(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up^\dagger U(t') U^\dagger(t) d_\up e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} U(t) \ket{Q_\up, Q_\dn}]
+\end{align}
+Here, we went in interaction picture, with the time evolution operator
+\begin{gather}
+	U(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V c^\dagger(u) c(u) d_\sigma^\dagger d_\sigma} + \theta(-t) [\text{adjoint}]
+\end{gather}
+We then expressed the trace over $d$ as a sum over its four states $\ket{Q_\up, Q_\dn}$, $Q_\sigma=0, 1$, and we used $d_\up(t) = e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up$.
+We introduced the probability $P(Q_\up, Q_\dn)$ to find the quantum dot in the state  $\ket{Q_\up, Q_\dn}$
+\begin{equation}
+	P(Q_\up, Q_\dn) = \frac{1}{Z_d} e^{-\beta[(E_d - \mu) (Q_\up + Q_\dn) + Q_\up Q_\dn U]}
+\end{equation}
+
+To continue we need to note that:
+\begin{equation}
+	U(t) \ket{Q_\up,Q_\dn} = \ket{Q_\up,Q_\dn} \tilde U_{Q_\up + Q_\dn}(t)
+\end{equation}
+with
+\begin{equation}
+	\tilde U_Q(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V Q c^\dagger(u) c(u)} + \theta(-t) [\text{adjoint}]
+\end{equation}
+and that $d_\up \ket{Q_\up,Q_\dn} = \delta_{Q_\up=1} \ket{0, Q_\dn}$.
+Finally:
+\begin{align}
+	-i G^<_d(t, t') ={}& \sum_{Q_\dn=0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(1, Q_\dn)
+	\expval{ \tilde U_{1+Q_\dn}^\dagger(t') \tilde U_{Q_\dn}(t' - t) \tilde U_{1 + Q_\dn}(t)}_c
+\end{align}
+where $\expval{\ldots}_c = \Tr_c \qty[\rho_c \ldots ]$.
+
+Similarly for the greater \ac{GF}:
+\begin{align}
+	i G^>_d(t, t') ={}& \expval{\tilde d_\up(t) \tilde d_\up^\dagger(t') }
+	\\
+	={}& \sum_{Q_\dn = 0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(0, Q_\dn)
+	\expval{ \tilde U_{Q_\dn}^\dag(t) \tilde U_{1 + Q_\dn}(t - t') \tilde U_{Q_\dn}(t')}_c
+\end{align}
+
+We define
+\begin{gather}
+	-i G^<_d(t, t') = \sum_{Q_\dn=0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(1, Q_\dn) A^-_{Q_\dn + 1}(t, t')^*
+	\\
+	i G^>_d(t, t') = \sum_{Q_\dn=0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(0, Q_\dn) A^+_{Q_\dn}(t, t')
+\end{gather}
+with
+\begin{align}
+%	A^{s}_{Q}(t, t') ={}& \expval{ \tilde U_{Q}^\dagger(t') \tilde U_{Q-1}(t' - t) \tilde U_{Q}(t)}_c
+%	\\
+	A^{\pm}_{Q}(t, t') ={}& \expval{ \tilde U_{Q}^\dag(t) \tilde U_{Q\pm1}(t - t') \tilde U_{Q}(t')}_c
+\end{align}
+
+We see that $A^{\pm}_Q(t', t) = A^{\pm}_Q(t, t')^*$.
+Note that we only need $A_1^-, A_2^-, A_0^+, A_1^+$.
+
+
+\subsection{Solving the $A$s}
+
+In the steady state, we send the start of the contour to $-\infty$ and choose $t' = 0$, so that for all $t$:
+\begin{align}
+%	A^-_{Q}(t) ={}& \theta(t)\expval{ \tilde U_{Q-1}^\dag(t) \tilde U_{Q}(t)}_{H_{Q}} + \theta(-t)\expval{ \tilde U_{Q}(t) \tilde U_{Q-1}^\dag(t)}_{H_{Q}}
+%	\\
+	A^{\pm}_{Q}(t) ={}& \theta(t)\expval{ \tilde U_{Q}^\dag(t) \tilde U_{Q\pm1}(t)}_{H_{Q}} + \theta(-t)\expval{ \tilde U_{Q\pm1}(t) \tilde U_{Q}^\dag(t)}_{H_{Q}}
+\end{align}
+
+\subsubsection{Diagrammatic expression}
+
+For $t \ge 0$, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (lying on the time range $[0, t]$ and contributing $W=\pm V$) linked with $g^T(u, u') = -i\expval{T \tilde c^\dag(u'^+) \tilde c(u)}_{H_Q}$, i.e. the time ordered Green functions solution of the QPC with Hamiltonian $H_Q$. Each diagram is multiplied by $(-1)^{l}$ with $l$ the number of loops.
+
+In the following we assume $t \ge 0$.
+The linked-cluster theorem asserts that
+\begin{equation}
+	A^{\pm}_Q(t) = \exp(C(t))
+\end{equation}
+with $C(t)$ the sum of connected diagrams only. They can only be made of a single loop, so we can write explicitly
+\begin{equation}
+	C(t) = - \sum_{n \ge 1} \frac{W^n}{n} \int_0^t \dd{u_1} \ldots \dd{u_n} g^T(u_1, u_2) \ldots g^T(u_n, u_1)
+\end{equation}
+where the $1/n$ factor stems for the choice of labeling.
+Here it is useful to introduce the sum of all chain diagrams, or equivalently all connected diagrams with two external legs, denoted $\varphi_t(u, u')$ and with the following explicit expression\footnote{$\varphi_t$ is in fact the dressed time ordered Green function with a perturbation acting only between times $0$ and $t$.}:
+\begin{equation}
+	\varphi_t(u, u') = g^T(u, u') + \sum_{n \ge 1} W^n \int_0^t \dd{u_1} \ldots \dd{u_n} g^T(u, u_1) \ldots g^T(u_n, u')
+\end{equation}
+
+To relate $C$ and $\varphi$, we need to eliminate the previously mentioned factor $1/n$. 
+This is done by taking the time derivative of $C$, which acts as fixing any of the vertex at time $t$, and therefore leads to%
+\footnote{
+Another possibility is to consider $W \pdv{C}{W}$ (keeping $g^T$ fixed), which has each diagram multiplied by its number of vertices. Then we see easily that
+\begin{equation}
+	W \pdv{C}{V} = W \int_0^t \dd{u} \varphi_t(u, u)
+\end{equation}
+}
+\begin{equation}
+	\dv{C}{t} = -W \varphi_t(t, t)
+\end{equation}
+remembering that equal time default ordering gives $\varphi_t(t, t) = \varphi_t(t, t^+)$.
+
+Finally we need to obtain $\varphi$. 
+$\varphi$ follows a (quasi) Dyson equation:
+\begin{equation}
+	\varphi_t(u, u') = g^T(u, u') + W \int_0^t \dd{v} g^T(u, v) \varphi_t(v, u')
+\end{equation}
+but we will only use the special case $u' = t$. Restricting to $0 \le u \le t$, this leads to this equation to solve:
+\begin{equation}
+	\label{eq:quasi_Dyson}
+	\varphi_t(u, t) = g^<(u - t) + W \int_0^u \dd{v} g^>(u - v) \varphi_t(v, t) + W \int_u^t \dd{v} g^<(u - v) \varphi_t(v, t)
+\end{equation}
+where we split $g^T$ into its greater and lesser components to make explicit the jump between the two, and used the fact we are in the steady-state.
+
+\subsubsection{Numerical solution}
+
+We solve Eq.~\eqref{eq:quasi_Dyson} for each separate $t$ by using a representation of functions $[0, t] \rightarrow \mathbb{C}$ by their values on a grid $\{u_1, \ldots, u_N\}$. Each $u_i$ is associated to a basis function $\phi_i$ such that $\phi_i(u_j) = \delta_{ij}$. We represent $g^<$, $g^>$ and $f:u \rightarrow f(u) = \varphi_t(u, t)$ with this choice of grid and basis functions:
+\begin{gather}
+	f(u) = \sum_n f(u_n) \phi_n(u)
+	\\
+	g^>(u) = \sum_n g^>(u_n) \phi_n(u)
+	\\
+	g^<(u) = \sum_n g^<(u_n) \phi_n(u)
+\end{gather}
+In addition, we precompute, numerically or analytically, the (quasi) convolution integrals
+\begin{gather}
+	I^>_{km}(u_n) = \int_0^{u_n} \dd{v} \phi_k(u_n - v) \phi_m(v)
+	\\
+	I^<_{km}(u_n) = \int_{u_n}^t \dd{v} \phi_k(u_n - v) \phi_m(v)
+\end{gather}
+
+This leads to
+\begin{equation}
+	f(u_n) = g^<(u_n - t) + W \sum_{k,m} \qty[g^>(u_k) I^>_{km}(u_n) + g^<(u_k) I^<_{km}(u_n)] f(u_m)
+\end{equation}
+which can be seen as a linear algebra problem $M f = b$, using the shortcuts
+\begin{align}
+	f_n ={}& f(u_n)
+	\\
+	b_n ={}& g^<(u_n - t)
+	\\
+	M_{nm} ={}& \delta_{nm} - W \sum_k \qty[g^>(u_k) I^>_{km}(u_n) + g^<(u_k) I^<_{km}(u_n)]
+\end{align}
+
+
+\subsection{Green function in the middle of the QPC}
+
+Let's focus on the QPC alone, which we describe as a single site with onsite energy $\varepsilon$, coupled to two leads (left and right) with hopping energy $\gamma$. The leads are assumed featureless, i.e. flat density of state and infinite bandwidth, of the same temperature $1/\beta$, but with different chemical potentials $\mu_L$ and $\mu_R$.
+
+We want the Green function $g$ of the central site.
+
+The retarded GF is simply:
+\begin{eqnarray}
+	g^R(\omega) = \frac{1}{\omega - \varepsilon + i\Gamma}
+\end{eqnarray}
+with $\Gamma = 2\pi\gamma^2\rho$, and $\rho$ the (constant) density of state of each lead.
+
+Inverting the Keldysh matrix, one find that the Keldysh component is
+\begin{align}
+	g^K(\omega) ={}& - g^R(\omega) \qty[g^{-1}]^K(\omega) g^A(\omega)
+	\\
+	={}& g^R(\omega) \qty[\Delta^K_L(\omega) + \Delta^K_R(\omega)] g^A(\omega)
+\end{align}
+with $\Delta^K_X(\omega) = i\Gamma \qty[2 n_F(\omega - \mu_X) - 1]$.
+Now the time-ordered component reads
+\begin{equation}
+	2g^T(\omega) = g^R(\omega) \qty[\Delta^K_L(\omega) + \Delta^K_R(\omega) + 2(\omega - \varepsilon)] g^A(\omega)
+\end{equation}
+
+%Now let's go in the time domain.
+%
+%We need an approximation to do this analytically. Let's assume that the Lorentzian is wide enough to have negligible impact over the numerator of $g^T$. This means $\Gamma \gg |\varepsilon - \mu_X|$ and $1/\beta$. Then,
+%\begin{equation}
+%	g^T(\omega) \approx \frac{i}{\Gamma} \qty[n_F(\omega - \mu_R) + n_F(\omega - \mu_L) - 1] + \frac{\omega - \varepsilon}{\Gamma}
+%\end{equation}
+%Using the Fourier transform of the Fermi function $n_F(t) = \delta(t)/2 + i/2\beta \sinh(\pi t / \beta)$, we get
+%\begin{equation}
+%	g^T(t) \approx -\frac{e^{-i\mu_L t} + e^{-i\mu_R t}}{2\Gamma\beta \sinh(\pi t / \beta)}
+%\end{equation}
+
+
+This leads to the lesser and greater components:
+\begin{align}
+	2g^>(\omega) ={}& g^K(\omega) + g^R(\omega) - g^A(\omega)
+	\\
+	={}& 2i\Gamma \frac{n_F(\omega - \mu_R) + n_F(\omega - \mu_L) - 2}{(\omega - \varepsilon)^2 + \Gamma^2}
+	\\
+	2g^<(\omega) ={}& g^K(\omega) - g^R(\omega) + g^A(\omega)
+	\\
+	={}& 2i\Gamma \frac{n_F(\omega - \mu_R) + n_F(\omega - \mu_L)}{(\omega - \varepsilon)^2 + \Gamma^2}
+\end{align}
+
+Now let's go in the time domain.
+
+We need an approximation to do this analytically. Let's assume that the Lorentzian is wide enough to have negligible impact over Fermi step functions. This means $\Gamma \gg |\varepsilon - \mu_X|$ and $1/\beta$. Then,
+\begin{align}
+	g^>(\omega) \approx{}& \frac{i}{\Gamma} \qty[n_F(\omega - \mu_R) + n_F(\omega - \mu_L) - 2]
+	\\
+	g^<(\omega) \approx{}& \frac{i}{\Gamma} \qty[n_F(\omega - \mu_R) + n_F(\omega - \mu_L)]
+\end{align}
+Using the Fourier transform of the Fermi function $n_F(t) = \delta(t)/2 + i/2\beta \sinh(\pi t / \beta)$, we get
+\begin{align}
+	g^>(t) \approx{}& \frac{i}{\Gamma} \qty[i\frac{e^{-i\mu_L t} + e^{-i\mu_R t}}{2\beta \sinh(\pi t / \beta)} - \delta(t)]
+	\\
+	g^<(t) \approx{}& \frac{i}{\Gamma} \qty[i\frac{e^{-i\mu_L t} + e^{-i\mu_R t}}{2\beta \sinh(\pi t / \beta)} + \delta(t)]
+\end{align}
+The time ordered Green function is then (not forgetting that equal time default order is equivalent to lesser):
+\begin{equation}
+	g^T(t) \approx - \frac{e^{-i\mu_L t} + e^{-i\mu_R t}}{2\Gamma\beta \sinh(\pi t / \beta)} + \frac{i}{\Gamma} \delta(t)
+\end{equation}
+
+%We now add a potential $QV$ on the central site, to get the Green function $g_Q$. TO do so we use the Dyson equation
+%\begin{equation}
+%	g_Q(\omega) = g(\omega) + g(\omega) QV g_Q(\omega)
+%\end{equation}
+%which gives
+%\begin{align}
+%	g_Q^R(\omega) ={}& \frac{1}{\omega - \varepsilon - VQ + i\Gamma}
+%	\\
+%	g_Q^K(\omega) ={}& g_Q^R(\omega) \qty[\Delta^K_L(\omega) + \Delta^K_R(\omega) + QV] g_Q^A(\omega)
+%\end{align}
+%Using our approximation for large $\Gamma$, we find
+%\begin{equation}
+%	g^{</>}_Q(\omega) = g^{</>}(\omega) + V / \Gamma^2
+%\end{equation}
+
+\subsection{Green function for $c$}
+
+\TODO{update with two spins}
+
+We follow the same steps:
+\begin{align}
+	-i G^<_c(t, t') ={}& \expval{\tilde c^\dagger(t') \tilde c(t)}
+	\\
+	={}& \frac{1}{Z_0} \Tr_c \sum_{Q=0,1} \qty[e^{-\beta H_c} e^{-\beta E_0 Q} \tilde U_Q^\dagger(t') c^\dagger(t') \tilde U_Q(t') \tilde U_Q^\dagger(t) c(t) \tilde U_Q(t)]
+	\\
+	={}& -i \frac{1}{Z_b} \qty(g^<_c(t, t') + e^{-\beta E_0} \tilde G^<_c(t, t'))
+\end{align}
+And:
+\begin{equation}
+	-i G^>_c(t, t') = -i \frac{1}{Z_b} \qty(g^>_c(t, t') + e^{-\beta E_0} \tilde G^>_c(t, t'))
+\end{equation}
+$g_c$ are the \ac{GF} of the unperturbed problem $H_c + H_d$, while $\tilde G_c$ are the \ac{GF} of the effective problem for $Q=1$.
+
+\section{The effective problem for $Q=1$}
+
+This is the problem of which $\tilde G_c$ are solutions. Its Hamiltonian is
+\begin{align}
+	\tilde H = H_c + V c^\dagger c
+\end{align}
+and as for the initial problem, the potential $V$ is switched on at $t=0$, while the initial state is the equilibrium state of $H_c$ alone.
+
+%\begin{figure}[t]
+%    \centering
+%    \includegraphics[width=8cm]{my_figure.pdf}
+%    \caption{
+%        \label{fig:the_figure}
+%    }
+%\end{figure}
+
+%\begin{tabular}[t]{c|c}
+%    $i$ & $n_i$ \\
+%    \hline
+%    0 & text \\
+%    1 & other text
+%\end{tabular}
+
+
+%%%%%%%%%%%%%%%
+%\noappendicestocpagenum
+%\begin{appendices}
+%
+%\section{An appendix}
+%
+%\end{appendices}
+
+%\bibliography{yourbiblio.bib}
+%\bibliographystyle{ieeetr}
+\printbibliography
+
+\end{document}

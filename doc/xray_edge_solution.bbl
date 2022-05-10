@@ -1,0 +1,192 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{NozieresDeDominicis1969}{article}{}
+      \name{author}{2}{}{%
+        {{hash=bba0477da0fb5ece4c5b8a4102341e4f}{%
+           family={Nozières},
+           familyi={N\bibinitperiod},
+           given={P.},
+           giveni={P\bibinitperiod}}}%
+        {{hash=a0cd854d8b3f9319cd12c70c921be12b}{%
+           family={Dominicis},
+           familyi={D\bibinitperiod},
+           given={C.\bibnamedelimi T.\bibnamedelimi De},
+           giveni={C\bibinitperiod\bibinitdelim T\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {American Physical Society ({APS})}%
+      }
+      \strng{namehash}{5c5fc1d8391bab01ac1bae1b5ae7677a}
+      \strng{fullhash}{5c5fc1d8391bab01ac1bae1b5ae7677a}
+      \strng{bibnamehash}{5c5fc1d8391bab01ac1bae1b5ae7677a}
+      \strng{authorbibnamehash}{5c5fc1d8391bab01ac1bae1b5ae7677a}
+      \strng{authornamehash}{5c5fc1d8391bab01ac1bae1b5ae7677a}
+      \strng{authorfullhash}{5c5fc1d8391bab01ac1bae1b5ae7677a}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{0031-899X}
+      \field{journaltitle}{Physical Review}
+      \field{month}{2}
+      \field{title}{Singularities in the {X-Ray} Absorption and Emission of Metals. {III}. {One}-Body Theory Exact Solution}
+      \field{volume}{178}
+      \field{year}{1969}
+      \field{pages}{1097\bibrangedash 1107}
+      \range{pages}{11}
+      \verb{doi}
+      \verb 10.1103/physrev.178.1097
+      \endverb
+    \endentry
+    \entry{Roulet1969}{article}{}
+      \name{author}{3}{}{%
+        {{hash=96c86386f0fb286ca84779b2d19e5312}{%
+           family={Roulet},
+           familyi={R\bibinitperiod},
+           given={B.},
+           giveni={B\bibinitperiod}}}%
+        {{hash=3a3b58293255ce4407635ba1e20b720d}{%
+           family={Gavoret},
+           familyi={G\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+        {{hash=bba0477da0fb5ece4c5b8a4102341e4f}{%
+           family={Nozières},
+           familyi={N\bibinitperiod},
+           given={P.},
+           giveni={P\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {American Physical Society ({APS})}%
+      }
+      \strng{namehash}{0c7513adbb59986c3a3e0a8dc7d0de15}
+      \strng{fullhash}{e202d6bdedaada49a2b265ed3a681d7a}
+      \strng{bibnamehash}{e202d6bdedaada49a2b265ed3a681d7a}
+      \strng{authorbibnamehash}{e202d6bdedaada49a2b265ed3a681d7a}
+      \strng{authornamehash}{0c7513adbb59986c3a3e0a8dc7d0de15}
+      \strng{authorfullhash}{e202d6bdedaada49a2b265ed3a681d7a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{0031-899X}
+      \field{journaltitle}{Physical Review}
+      \field{month}{2}
+      \field{title}{Singularities in the {X-Ray} Absorption and Emission of Metals. {I}. {First}-Order Parquet Calculation}
+      \field{volume}{178}
+      \field{year}{1969}
+      \field{pages}{1072\bibrangedash 1083}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.1103/physrev.178.1072
+      \endverb
+    \endentry
+    \entry{NozieresRoulet1969}{article}{}
+      \name{author}{3}{}{%
+        {{hash=bba0477da0fb5ece4c5b8a4102341e4f}{%
+           family={Nozières},
+           familyi={N\bibinitperiod},
+           given={P.},
+           giveni={P\bibinitperiod}}}%
+        {{hash=3a3b58293255ce4407635ba1e20b720d}{%
+           family={Gavoret},
+           familyi={G\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+        {{hash=96c86386f0fb286ca84779b2d19e5312}{%
+           family={Roulet},
+           familyi={R\bibinitperiod},
+           given={B.},
+           giveni={B\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {American Physical Society ({APS})}%
+      }
+      \strng{namehash}{7d1641b07387255a32822a1f6e0d4cca}
+      \strng{fullhash}{68e1c0ca4bd9eccd151ebab7e99ccb8f}
+      \strng{bibnamehash}{68e1c0ca4bd9eccd151ebab7e99ccb8f}
+      \strng{authorbibnamehash}{68e1c0ca4bd9eccd151ebab7e99ccb8f}
+      \strng{authornamehash}{7d1641b07387255a32822a1f6e0d4cca}
+      \strng{authorfullhash}{68e1c0ca4bd9eccd151ebab7e99ccb8f}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{0031-899X}
+      \field{journaltitle}{Physical Review}
+      \field{month}{2}
+      \field{title}{Singularities in the {X-Ray} Absorption and Emission of Metals. {II}. {Self}-Consistent Treatment of Divergences}
+      \field{volume}{178}
+      \field{year}{1969}
+      \field{pages}{1084\bibrangedash 1096}
+      \range{pages}{13}
+      \verb{doi}
+      \verb 10.1103/physrev.178.1084
+      \endverb
+    \endentry
+    \entry{Aleiner1997}{article}{}
+      \name{author}{3}{}{%
+        {{hash=81d42b26b8e7c1147f6b8b1095670ad1}{%
+           family={Aleiner},
+           familyi={A\bibinitperiod},
+           given={I.\bibnamedelimi L.},
+           giveni={I\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+        {{hash=a4dbca0f81f36c299b907db74c8f46eb}{%
+           family={Wingreen},
+           familyi={W\bibinitperiod},
+           given={Ned\bibnamedelima S.},
+           giveni={N\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=45922c225a5ed9049429c26a2e4434c4}{%
+           family={Meir},
+           familyi={M\bibinitperiod},
+           given={Yigal},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {American Physical Society ({APS})}%
+      }
+      \strng{namehash}{93496a434b3566de62ab32994ce5ba66}
+      \strng{fullhash}{d10a3240bdb5e9d421068eb953954c49}
+      \strng{bibnamehash}{d10a3240bdb5e9d421068eb953954c49}
+      \strng{authorbibnamehash}{d10a3240bdb5e9d421068eb953954c49}
+      \strng{authornamehash}{93496a434b3566de62ab32994ce5ba66}
+      \strng{authorfullhash}{d10a3240bdb5e9d421068eb953954c49}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{0031-9007}
+      \field{journaltitle}{Physical Review Letters}
+      \field{month}{11}
+      \field{title}{Dephasing and the Orthogonality Catastrophe in Tunneling through a Quantum Dot: {The} “Which Path?” Interferometer}
+      \field{volume}{79}
+      \field{year}{1997}
+      \field{pages}{3740\bibrangedash 3743}
+      \range{pages}{4}
+      \verb{doi}
+      \verb 10.1103/physrevlett.79.3740
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
