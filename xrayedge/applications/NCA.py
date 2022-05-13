@@ -58,7 +58,7 @@ class NCASolver:
         self.correlator_solver.compute_C(0, 0)
         tail = self.correlator_solver.get_tail(0, 0)
         slope = tail[1]
-        return 1j * slope
+        return self.PP.eps_QD + 1j * slope
 
 
 def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
