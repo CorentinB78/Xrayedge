@@ -50,6 +50,16 @@ class NCASolver:
         w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(0, nr_freqs)
         return w, -1j * A_w, energy_shift + self.PP.eps_QD
 
+    def G_reta_w_lorentzian_approx(self):
+        """
+        Assuming G_reta_w has a lorentzian shape 1 / (w - gamma),
+        returns an estimate of gamma based on the long time behavior of C.
+        """
+        self.correlator_solver.compute_C(0, 0)
+        tail = self.correlator_solver.get_tail(0, 0)
+        slope = tail[1]
+        return 1j * slope
+
 
 def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
 
@@ -112,6 +122,11 @@ def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
         tb.autoscale_y(logscale=True)
         plt.show()
 
-    print("Norm F_reta_w:", -np.trapz(x=w, y=f) / np.pi, "== 1.0j ?")
+    norm_err = np.abs(-np.trapz(x=w, y=f) - np.pi * 1j)
+    if norm_err > 1e-1:
+        print(f"XXX Norm F_reta_w error = {norm_err}")
+    elif norm_err > 1e-2:
+        print(f"/!\ Norm F_reta_w error = {norm_err}")
+    # print("Norm F_reta_w:", -np.trapz(x=w, y=f) / np.pi, "== 1.0j ?")
 
     return f
