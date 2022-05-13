@@ -154,8 +154,7 @@ class CorrelatorSolver:
         Returns: freqs, A, energy shift.
         """
         type = 0
-        if self._cache_C_tail[type][Q] is None:
-            self.compute_C(type, Q)
+        self.compute_C(type, Q)
 
         slope = self._cache_C_tail[type][Q][1]
 
@@ -188,8 +187,7 @@ class CorrelatorSolver:
             C_vals -- a 1D array
         """
         times = np.asarray(times)
-        if self._cache_C_interp[type][Q] is None:
-            self.compute_C(type, Q)
+        self.compute_C(type, Q)
 
         C_vals = self._cache_C_interp[type][Q](times)
         mask = np.abs(times) >= self.AP.time_extrapolate
@@ -205,10 +203,14 @@ class CorrelatorSolver:
 
         return C_vals
 
-    def compute_C(self, type, Q):
+    def compute_C(self, type, Q, ignore_cache=False):
         """
-        Compute C, fills cache and returns error estimate.
+        If value cannot be found in cache, does compute C, fills cache and returns error estimate.
         """
+
+        if (not ignore_cache) and (self._cache_C_interp[type][Q] is not None):
+            return None  # nothing to do
+
         if type == 0:
             sign = 1
         elif type == 1:
@@ -257,3 +259,11 @@ class CorrelatorSolver:
             atol_gmres=self.AP.atol_gmres,
         )
         return phi[-1]
+
+    ### getters ###
+    def get_tail(self, type, Q):
+        tail = self._cache_C_tail[type][Q]
+        if tail is None:
+            raise RuntimeError("Tail has not been computed.")
+
+        return tail
