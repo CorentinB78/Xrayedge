@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import interpolate
 from matplotlib import pyplot as plt
 from copy import copy
 import toolbox as tb
@@ -61,13 +62,42 @@ class NCASolver:
         return self.PP.eps_QD + 1j * slope
 
 
+def checked_interp(x, xp, fp, rtol, atol, **kwargs):
+    """
+    Assumed x regularly spaced
+    """
+    interp = interpolate.interp1d(xp, fp, **kwargs)
+    f = interp(x)
+    f_half = interp(x[::2])
+    f_half = np.interp(x, x[::2], f_half)
+
+    diff = np.abs(f_half - f)
+    err = np.max(diff - rtol * np.abs(f) - atol)
+
+    if err > 0:
+        print(
+            f"XXX [Xray] low number of samples for interp: max abs err={np.max(diff)}, max rel err={np.max(diff / np.abs(f))}"
+        )
+
+    return f
+
+
 def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
 
     wp_sh = wp + wp_shift
 
     f_real = 1.0 / (w - wp_shift)
     mask = np.abs(w - wp_shift) < wp[-1] / 10.0
-    f_real[mask] = np.interp(w[mask], wp_sh, fp.real)
+    f_real[mask] = checked_interp(
+        w[mask],
+        wp_sh,
+        fp.real,
+        rtol=1e-2,
+        atol=tol,
+        kind="cubic",
+        assume_sorted=True,
+        copy=False,
+    )
 
     mask_p = -fp.imag > tol
 
@@ -89,7 +119,16 @@ def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
     intercept = np.log(-fp.imag[idx_left]) - slope * (wp_sh[idx_left])
     f_imag[mask_left] = -np.exp(intercept + w[mask_left] * slope)
 
-    f_imag[mask_center] = np.interp(w[mask_center], wp_sh, fp.imag)
+    f_imag[mask_center] = checked_interp(
+        w[mask_center],
+        wp_sh,
+        fp.imag,
+        rtol=1e-2,
+        atol=tol,
+        kind="cubic",
+        assume_sorted=True,
+        copy=False,
+    )
 
     slope = (np.log(-fp.imag[idx_right]) - np.log(-fp.imag[idx_right - 1])) / (
         np.log(wp[idx_right]) - np.log(wp[idx_right - 1])
@@ -107,7 +146,7 @@ def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
         xcenter = (wp_sh[0] + wp_sh[-1]) / 2.0
         xdev = np.abs(wp_sh[0] - wp_sh[-1])
         plt.xlim(xcenter - xdev, xcenter + xdev)
-        tb.autoscale_y(logscale=True)
+        # tb.autoscale_y(logscale=True)
         tb.ylim_max(tol * 1e-3, 1e10 * tol)
         # plt.ylim(tol * 1e-3)
         plt.show()
@@ -119,7 +158,7 @@ def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
         plt.semilogy()
 
         plt.xlim(xcenter - xdev, xcenter + xdev)
-        tb.autoscale_y(logscale=True)
+        # tb.autoscale_y(logscale=True)
         plt.show()
 
     norm_err = np.abs(-np.trapz(x=w, y=f) - np.pi * 1j)
