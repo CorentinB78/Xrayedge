@@ -82,24 +82,11 @@ def checked_interp(x, xp, fp, rtol, atol, **kwargs):
     return f
 
 
-def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
+def interp_one_over_G_reta_w(w, wp, fp, wp_shift, rtol=1e-2, atol=1e-4, plot=False):
 
     wp_sh = wp + wp_shift
 
-    f_real = 1.0 / (w - wp_shift)
-    mask = np.abs(w - wp_shift) < wp[-1] / 10.0
-    f_real[mask] = checked_interp(
-        w[mask],
-        wp_sh,
-        fp.real,
-        rtol=1e-2,
-        atol=tol,
-        kind="cubic",
-        assume_sorted=True,
-        copy=False,
-    )
-
-    mask_p = -fp.imag > tol
+    mask_p = np.abs(wp) < wp[-1] / 10.0
 
     idx_left = np.nonzero(mask_p)[0][0]
     idx_right = np.nonzero(mask_p)[0][-1]
@@ -107,65 +94,77 @@ def clean_and_interp_G_reta_w(w, wp, fp, wp_shift, tol=1e-3, plot=False):
     mask_right = w >= wp_sh[mask_p][-1]
     mask_center = ~np.logical_or(mask_left, mask_right)
 
-    f_imag = np.zeros_like(w)
+    f_real = np.zeros_like(w)
 
-    slope = (np.log(-fp.imag[idx_left + 1]) - np.log(-fp.imag[idx_left])) / (
-        wp_sh[idx_left + 1] - wp_sh[idx_left]
+    slope = (np.log(fp.real[idx_right]) - np.log(fp.real[idx_right - 1])) / (
+        np.log(wp[idx_right]) - np.log(wp[idx_right - 1])
+    )
+    intercept = np.log(fp.real[idx_right]) - slope * np.log(wp[idx_right])
+    f_real[mask_right] = np.exp(intercept + np.log(w[mask_right] - wp_shift) * slope)
+
+    slope = (np.log(-fp.real[idx_left + 1]) - np.log(-fp.real[idx_left])) / (
+        np.log(-wp[idx_left + 1]) - np.log(-wp[idx_left])
     )
 
-    if slope < 0.0:
-        print(f"XXX slope = {slope} is negative!")
+    intercept = np.log(-fp.real[idx_left]) - slope * np.log(-wp[idx_left])
+    f_real[mask_left] = -np.exp(intercept + np.log(-w[mask_left] + wp_shift) * slope)
 
-    intercept = np.log(-fp.imag[idx_left]) - slope * (wp_sh[idx_left])
-    f_imag[mask_left] = -np.exp(intercept + w[mask_left] * slope)
-
-    f_imag[mask_center] = checked_interp(
+    f_real[mask_center] = checked_interp(
         w[mask_center],
         wp_sh,
-        fp.imag,
-        rtol=1e-2,
-        atol=tol,
+        fp.real,
+        rtol=rtol,
+        atol=atol,
         kind="cubic",
         assume_sorted=True,
         copy=False,
     )
 
-    slope = (np.log(-fp.imag[idx_right]) - np.log(-fp.imag[idx_right - 1])) / (
-        np.log(wp[idx_right]) - np.log(wp[idx_right - 1])
+    delta = abs(wp[-1] - wp[0]) * 0.1
+    mask = np.logical_and(w >= wp_sh[0] + delta, w <= wp_sh[-1] - delta)
+
+    assert mask.any()
+
+    f_imag = np.empty_like(f_real)
+
+    f_imag[mask] = checked_interp(
+        w[mask],
+        wp_sh,
+        fp.imag,
+        rtol=rtol,
+        atol=atol,
+        kind="cubic",
+        assume_sorted=True,
+        copy=False,
     )
-    intercept = np.log(-fp.imag[idx_right]) - slope * np.log(wp[idx_right])
-    f_imag[mask_right] = -np.exp(intercept + np.log(w[mask_right] - wp_shift) * slope)
+
+    f_imag[~mask] = 0.0
 
     f = f_real + 1j * f_imag
 
     if plot:
-        plt.axhline(tol, c="k", ls=":")
-        plt.plot(w, -f.imag)
-        plt.plot(wp_sh, -fp.imag, "--")
+        plt.plot(w, f.imag)
+        plt.plot(wp_sh, fp.imag, "--")
         plt.semilogy()
         xcenter = (wp_sh[0] + wp_sh[-1]) / 2.0
         xdev = np.abs(wp_sh[0] - wp_sh[-1])
         plt.xlim(xcenter - xdev, xcenter + xdev)
-        # tb.autoscale_y(logscale=True)
-        tb.ylim_max(tol * 1e-3, 1e10 * tol)
-        # plt.ylim(tol * 1e-3)
+        tb.autoscale_y(logscale=True)
         plt.show()
 
         plt.axvline(wp_shift + wp[-1] / 10.0, c="k", ls=":")
         plt.axvline(wp_shift - wp[-1] / 10.0, c="k", ls=":")
-        plt.plot(w, np.abs(f.real))
-        plt.plot(wp_sh, np.abs(fp.real), "--")
-        plt.semilogy()
-
+        plt.plot(w, f.real - w)
         plt.xlim(xcenter - xdev, xcenter + xdev)
-        # tb.autoscale_y(logscale=True)
+        tb.autoscale_y()
+        plt.plot(wp_sh, fp.real - wp_sh, "--")
+
         plt.show()
 
-    norm_err = np.abs(-np.trapz(x=w, y=f) - np.pi * 1j)
+    norm_err = np.abs(-np.trapz(x=w, y=1.0 / f) - np.pi * 1j)
     if norm_err > 1e-1:
         print(f"XXX Norm F_reta_w error = {norm_err}")
     elif norm_err > 1e-2:
         print(f"/!\ Norm F_reta_w error = {norm_err}")
-    # print("Norm F_reta_w:", -np.trapz(x=w, y=f) / np.pi, "== 1.0j ?")
 
     return f
