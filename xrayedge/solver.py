@@ -102,7 +102,7 @@ def gen_params(accuracy_params, gmres=False):
     yield params, "time_extrapolate"
 
     params = copy(accuracy_params)
-    params.tol_C *= 4.0
+    params.tol_C *= 10.0
     yield params, "tol_C"
 
     params = copy(accuracy_params)
