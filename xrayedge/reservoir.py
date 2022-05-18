@@ -1,6 +1,6 @@
 import toolbox as tb
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, integrate
 from copy import copy
 
 
@@ -189,4 +189,4 @@ class QPC(Reservoir):
         w, dw = np.linspace(-self.w_max, self.w_max, self.N_fft, retstep=True)
         g_less = self.g_less(w, Q=Q)
 
-        return np.trapz(y=g_less.imag, dx=dw) / (2 * np.pi)
+        return integrate.simpson(y=g_less.imag, dx=dw) / (2 * np.pi)
