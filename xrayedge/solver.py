@@ -156,19 +156,25 @@ class CorrelatorSolver:
         type = 0
         self.compute_C(type, Q)
 
-        slope = self._cache_C_tail[type][Q][1]
+        intercept, slope = self._cache_C_tail[type][Q]
 
-        times = np.linspace(0, 200.0 / np.abs(slope.real), nr_freqs)
+        times = np.linspace(0, 10.0 / np.abs(slope.real), nr_freqs)
         C_vals = self.C(type, Q, times)
 
         # shift energy
         C_vals -= 1j * times * slope.imag
 
-        A = np.exp(C_vals)
-        A[0] *= 0.5
-        w, A = tb.fourier_transform(times, A)
+        A_bulk = np.exp(C_vals)
 
-        return w, A, -slope.imag
+        # treat tail analytically
+        A_bulk -= np.exp(intercept + times * slope.real)
+
+        A_bulk[0] *= 0.5
+        w, A_w = tb.fourier_transform(times, A_bulk)
+
+        A_w += -np.exp(intercept) / (1j * w + slope.real)
+
+        return w, A_w, -slope.imag
 
     ######## C and phi #######
 

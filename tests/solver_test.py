@@ -78,8 +78,8 @@ class TestAPlusReta(unittest.TestCase):
     def test_energy_shift(self):
 
         PP = xray.PhysicsParameters()
-        PP.beta = 10.0
-        PP.V_cap = 0.1
+        PP.beta = 1.0
+        PP.V_cap = 1.0
         PP.bias_QPC = 0.0
         PP.eps_QPC = 0.0
         PP.mu_QPC = 0.0
@@ -96,10 +96,10 @@ class TestAPlusReta(unittest.TestCase):
         freqs, A_reta_w, en_shift = CS.A_plus_reta_w(0, 10000)
 
         times, A_time = tb.inv_fourier_transform(freqs + en_shift, A_reta_w)
-        mask = times > 0.0
+        mask = times > times[-1] / 10.0  # avoid region with Gibbs phenomenon
 
         testing.assert_allclose(
-            A_time[mask], np.exp(CS.C(0, 0, times[mask])), atol=1e-5
+            A_time[mask], np.exp(CS.C(0, 0, times[mask])), atol=1e-3
         )
 
 
