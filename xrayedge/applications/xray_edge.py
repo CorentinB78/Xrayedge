@@ -25,7 +25,7 @@ class XRayEdgeSolver:
         return np.exp(
             -self.PP.beta
             * (
-                (self.PP.eps_QD - self.PP.mu_QD) * (Q_up + Q_dn)
+                (self.PP.eps_sys - self.PP.mu_sys) * (Q_up + Q_dn)
                 + Q_up * Q_dn * self.PP.U
             )
         )
@@ -48,7 +48,7 @@ class XRayEdgeSolver:
         """
         Greater Green function in times on the QD
         """
-        prefactor = -1j * np.exp(-1j * t_array * self.PP.eps_QD)
+        prefactor = -1j * np.exp(-1j * t_array * self.PP.eps_sys)
         out = self.proba(0, 0) * self.correlator_solver.A_plus(0, t_array)
         out += (
             np.exp(-1j * t_array * self.PP.U)
@@ -61,7 +61,7 @@ class XRayEdgeSolver:
         """
         Lesser Green function in times on the QD
         """
-        prefactor = 1j * np.exp(-1j * t_array * self.PP.eps_QD)
+        prefactor = 1j * np.exp(-1j * t_array * self.PP.eps_sys)
         out = self.proba(1, 0) * np.conj(self.correlator_solver.A_minus(1, t_array))
         out += (
             np.exp(-1j * t_array * self.PP.U)

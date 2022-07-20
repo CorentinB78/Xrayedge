@@ -35,7 +35,7 @@ class NCASolver:
         # no U in NCA constraint
         return (
             -1j
-            * np.exp(-1j * t_array * self.PP.eps_QD)
+            * np.exp(-1j * t_array * self.PP.eps_sys)
             * self.correlator_solver.A_plus(0, t_array)
         )
 
@@ -50,7 +50,7 @@ class NCASolver:
         """
         # no U in NCA constraint
         w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(0, nr_freqs)
-        return w, -1j * A_w, energy_shift + self.PP.eps_QD
+        return w, -1j * A_w, energy_shift + self.PP.eps_sys
 
     def G_reta_w_lorentzian_approx(self):
         """
@@ -60,7 +60,7 @@ class NCASolver:
         self.correlator_solver.compute_C(0, 0)
         tail = self.correlator_solver.get_tail(0, 0)
         slope = tail[1]
-        return self.PP.eps_QD + 1j * slope
+        return self.PP.eps_sys + 1j * slope
 
 
 def checked_interp(x, xp, fp, rtol, atol, **kwargs):

@@ -39,10 +39,10 @@ class TestCorrelatorSolver(unittest.TestCase):
     def test_nonreg(self):
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
-        PP.bias_QPC = 0.0
+        PP.bias_res = 0.0
         PP.V_cap = 1.0
-        PP.eps_QPC = 0.0
-        PP.eps_QD = 0.0
+        PP.eps_res = 0.0
+        PP.eps_sys = 0.0
         PP.Gamma = 1.0
         PP.U = 0.0
 
@@ -80,9 +80,9 @@ class TestAPlusReta(unittest.TestCase):
         PP = xray.PhysicsParameters()
         PP.beta = 1.0
         PP.V_cap = 1.0
-        PP.bias_QPC = 0.0
-        PP.eps_QPC = 0.0
-        PP.D_QPC = 3.0
+        PP.bias_res = 0.0
+        PP.eps_res = 0.0
+        PP.D_res = 3.0
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
         AP.tol_C = 0.0001
@@ -117,9 +117,9 @@ class TestCompareWithAnalytic(unittest.TestCase):
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
         PP.V_cap = 1.0
-        PP.bias_QPC = 0.0
-        PP.eps_QPC = 0.0
-        PP.D_QPC = 3.0
+        PP.bias_res = 0.0
+        PP.eps_res = 0.0
+        PP.D_res = 3.0
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
         AP.tol_C = 0.0001
@@ -155,9 +155,9 @@ class TestRenormalizedEnergies(unittest.TestCase):
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
         PP.V_cap = 0.1
-        PP.bias_QPC = 0.0
-        PP.eps_QPC = 0.0
-        PP.D_QPC = 3.0
+        PP.bias_res = 0.0
+        PP.eps_res = 0.0
+        PP.D_res = 3.0
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
         AP.tol_C = 0.0001

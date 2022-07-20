@@ -12,8 +12,8 @@ import cProfile
 PP = xray.PhysicsParameters()
 
 PP.beta = 100.0
-PP.bias_QPC = 0.0
-PP.eps_QPC = 0.0  # on the QPC
+PP.bias_res = 0.0
+PP.eps_res = 0.0  # on the QPC
 PP.Gamma = 1.0
 PP.V_cap = 5.0  # = dV/dQ
 

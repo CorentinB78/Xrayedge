@@ -31,23 +31,23 @@ class PhysicsParameters(Parameters):
     def __init__(
         self,
         beta=1.0,
-        mu_QD=0.0,
-        bias_QPC=0.0,
+        mu_sys=0.0,
+        bias_res=0.0,
         V_cap=1.0,
-        eps_QD=0.0,
-        eps_QPC=0.0,
-        D_QPC=1.0,
+        eps_sys=0.0,
+        eps_res=0.0,
+        D_res=1.0,
+        eta_res=0.01,
         U=0.0,
     ):
         self.beta = beta
-        self.mu_QD = (
-            mu_QD  # chemical potential on the QD TODO: remove if redondant with eps_QD
-        )
-        self.bias_QPC = bias_QPC
+        self.mu_sys = mu_sys  # chemical potential on the QD TODO: remove if redondant with eps_sys
+        self.bias_res = bias_res
         self.V_cap = V_cap  # = dV/dQ
-        self.eps_QD = eps_QD  # on the QD
-        self.eps_QPC = eps_QPC  # on the QPC
-        self.D_QPC = D_QPC
+        self.eps_sys = eps_sys  # on the QD
+        self.eps_res = eps_res  # on the QPC
+        self.D_res = D_res
+        self.eta_res = eta_res
         self.U = U
 
 

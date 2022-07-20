@@ -8,8 +8,8 @@ class TestXRayEdgeSolver(unittest.TestCase):
         PP = PhysicsParameters()
         PP.beta = 0.1
         PP.V_cap = 1.5
-        PP.eps_QD = 0.0
-        PP.bias_QPC = 0.0
+        PP.eps_sys = 0.0
+        PP.bias_res = 0.0
 
         AP = AccuracyParameters(time_extrapolate=10.0)
         AP.method = "cheb"

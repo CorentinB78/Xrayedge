@@ -10,9 +10,9 @@ class TestQPCFrequencyDomain(unittest.TestCase):
     def setUp(self):
         PP = PhysicsParameters()
         PP.beta = 1.0
-        PP.D_QPC = 10.0
-        PP.eps_QPC = -2.0
-        PP.bias_QPC = 0.5
+        PP.D_res = 10.0
+        PP.eps_res = -2.0
+        PP.bias_res = 0.5
         PP.V_cap = 1.2
         qpc = reservoir.QPC(PP)
 

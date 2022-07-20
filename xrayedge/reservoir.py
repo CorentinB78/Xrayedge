@@ -78,12 +78,12 @@ class QPC(Reservoir):
         super().__init__()
         self.PP = copy(physics_params)
 
-        spreads = np.array([self.PP.D_QPC, 1.0 / self.PP.beta])
+        spreads = np.array([self.PP.D_res, 1.0 / self.PP.beta])
         centers = np.array(
             [
-                self.PP.eps_QPC,
-                +0.5 * self.PP.bias_QPC,
-                -0.5 * self.PP.bias_QPC,
+                self.PP.eps_res,
+                +0.5 * self.PP.bias_res,
+                -0.5 * self.PP.bias_res,
             ]
         )
 
@@ -114,7 +114,7 @@ class QPC(Reservoir):
         """
         Retarded hybridization function in frequencies for left and right leads (together) of QPC.
         """
-        return -1j * self.PP.D_QPC * np.ones_like(w_array)
+        return -1j * self.PP.D_res * np.ones_like(w_array)
 
     def delta_leads_K(self, w_array):
         """
@@ -123,8 +123,8 @@ class QPC(Reservoir):
         return (
             -2j
             * (
-                tb.fermi(w_array, 0.5 * self.PP.bias_QPC, self.PP.beta)
-                + tb.fermi(w_array, -0.5 * self.PP.bias_QPC, self.PP.beta)
+                tb.fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta)
+                + tb.fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta)
                 - 1.0
             )
             * np.imag(self.delta_leads_R(w_array))
@@ -136,7 +136,7 @@ class QPC(Reservoir):
         """
         w_array = np.asarray(w_array)
         return 1.0 / (
-            w_array - self.PP.eps_QPC - Q * self.PP.V_cap - self.delta_leads_R(w_array)
+            w_array - self.PP.eps_res - Q * self.PP.V_cap - self.delta_leads_R(w_array)
         )
 
     def g_keld(self, w_array, Q):
