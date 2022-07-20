@@ -31,7 +31,6 @@ class PhysicsParameters(Parameters):
     def __init__(
         self,
         beta=1.0,
-        mu_sys=0.0,
         bias_res=0.0,
         V_cap=1.0,
         eps_sys=0.0,
@@ -41,7 +40,6 @@ class PhysicsParameters(Parameters):
         U=0.0,
     ):
         self.beta = beta
-        self.mu_sys = mu_sys  # chemical potential on the QD TODO: remove if redondant with eps_sys
         self.bias_res = bias_res
         self.V_cap = V_cap  # = dV/dQ
         self.eps_sys = eps_sys  # on the QD

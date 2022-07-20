@@ -25,7 +25,7 @@ class XRayEdgeSolver:
         return np.exp(
             -self.PP.beta
             * (
-                (self.PP.eps_sys - self.PP.mu_sys) * (Q_up + Q_dn)
+                (self.PP.eps_sys) * (Q_up + Q_dn)
                 + Q_up * Q_dn * self.PP.U
             )
         )
