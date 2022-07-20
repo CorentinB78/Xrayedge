@@ -59,17 +59,17 @@ class Reservoir:
         return self._cache_g_grea_t[Q]
 
 
-class QPC(Reservoir):
+class QuantumDot(Reservoir):
     def __init__(
         self, physics_params, nr_samples_fft=None, w_max=None, max_fft_size=int(1e7)
     ):
         """
-        Quantum Point Contact. A type of reservoir with a central site coupled to two baths with a chemical potential difference.
+        Quantum Dot. A type of reservoir with a central site coupled to two baths of infintie bandwidth and with a chemical potential difference.
 
         Provides real time Green functions at the central site for different charge offsets Q.
 
         Arguments:
-            physics_params -- a `PhysicsParameters` instance
+            physics_params -- a class with parameters `D_res`, `eps_res`, `bias_res`, `beta` and `V_cap`.
 
         Keyword Arguments:
             nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
@@ -112,13 +112,13 @@ class QPC(Reservoir):
 
     def delta_leads_R(self, w_array):
         """
-        Retarded hybridization function in frequencies for left and right leads (together) of QPC.
+        Retarded hybridization function in frequencies for left and right leads (together) of QuantumDot.
         """
         return -1j * self.PP.D_res * np.ones_like(w_array)
 
     def delta_leads_K(self, w_array):
         """
-        Keldysh hybridization function in frequencies for left and right leads (together) of QPC.
+        Keldysh hybridization function in frequencies for left and right leads (together) of QuantumDot.
         """
         return (
             -2j
@@ -132,7 +132,7 @@ class QPC(Reservoir):
 
     def g_reta(self, w_array, Q):
         """
-        Retarded GF in frequencies of QPC's central site.
+        Retarded GF in frequencies of QuantumDot's central site.
         """
         w_array = np.asarray(w_array)
         return 1.0 / (
@@ -141,13 +141,13 @@ class QPC(Reservoir):
 
     def g_keld(self, w_array, Q):
         """
-        Keldysh GF in frequencies of QPC's central site.
+        Keldysh GF in frequencies of QuantumDot's central site.
         """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * self.delta_leads_K(w_array)
 
     def g_less(self, w_array, Q):
         """
-        Lesser GF in frequencies of QPC's central site.
+        Lesser GF in frequencies of QuantumDot's central site.
         """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * (
             0.5 * self.delta_leads_K(w_array)
@@ -156,7 +156,7 @@ class QPC(Reservoir):
 
     def g_grea(self, w_array, Q):
         """
-        Greater GF in frequencies of QPC's central site.
+        Greater GF in frequencies of QuantumDot's central site.
         """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * (
             0.5 * self.delta_leads_K(w_array)

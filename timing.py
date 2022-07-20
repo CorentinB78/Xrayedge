@@ -13,9 +13,9 @@ PP = xray.PhysicsParameters()
 
 PP.beta = 100.0
 PP.bias_res = 0.0
-PP.eps_res = 0.0  # on the QPC
+PP.eps_res = 0.0
 PP.Gamma = 1.0
-PP.V_cap = 5.0  # = dV/dQ
+PP.V_cap = 5.0
 
 tmax = 100.0
 

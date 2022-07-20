@@ -1,7 +1,7 @@
 import numpy as np
 from copy import copy
 from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
-from ..reservoir import QPC
+from ..reservoir import QuantumDot
 
 
 class XRayEdgeSolver:
@@ -19,15 +19,14 @@ class XRayEdgeSolver:
             else AccuracyParameters(self.PP, 1.0)
         )
 
-        self.correlator_solver = CorrelatorSolver(QPC(self.PP), self.PP.V_cap, self.AP)
+        self.correlator_solver = CorrelatorSolver(
+            QuantumDot(self.PP), self.PP.V_cap, self.AP
+        )
 
     def weight(self, Q_up, Q_dn):
         return np.exp(
             -self.PP.beta
-            * (
-                (self.PP.eps_sys) * (Q_up + Q_dn)
-                + Q_up * Q_dn * self.PP.U
-            )
+            * ((self.PP.eps_sys) * (Q_up + Q_dn) + Q_up * Q_dn * self.PP.U)
         )
 
     def Z_d(self):

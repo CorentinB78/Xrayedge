@@ -41,9 +41,9 @@ class PhysicsParameters(Parameters):
     ):
         self.beta = beta
         self.bias_res = bias_res
-        self.V_cap = V_cap  # = dV/dQ
-        self.eps_sys = eps_sys  # on the QD
-        self.eps_res = eps_res  # on the QPC
+        self.V_cap = V_cap
+        self.eps_sys = eps_sys
+        self.eps_res = eps_res
         self.D_res = D_res
         self.eta_res = eta_res
         self.U = U
