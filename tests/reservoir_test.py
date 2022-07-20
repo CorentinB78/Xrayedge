@@ -17,11 +17,11 @@ class TestQPCFrequencyDomain(unittest.TestCase):
         res = reservoir.QuantumDot(PP)
 
         self.PP = PP
-        self.QuantumDot = res
+        self.res = res
 
     def test_gf_reta_0(self):
         w = np.linspace(-50, 50, 1000)
-        gf_reta = self.QuantumDot.g_reta(w, Q=0)
+        gf_reta = self.res.g_reta(w, Q=0)
 
         gf_reta_ref = 1.0 / (w + 2.0 + 10.0j)
 
@@ -30,7 +30,7 @@ class TestQPCFrequencyDomain(unittest.TestCase):
     def test_gf_reta_1(self):
         w = np.linspace(-50, 50, 1000)
         Q = 0.5
-        gf_reta = self.QuantumDot.g_reta(w, Q=Q)
+        gf_reta = self.res.g_reta(w, Q=Q)
 
         gf_reta_ref = 1.0 / (w + 2.0 - 1.2 * Q + 10.0j)
 
@@ -38,7 +38,7 @@ class TestQPCFrequencyDomain(unittest.TestCase):
 
     def test_gf_less_0(self):
         w = np.linspace(-50, 50, 1000)
-        gf_less = self.QuantumDot.g_less(w, Q=0)
+        gf_less = self.res.g_less(w, Q=0)
 
         f_ref = 0.5 * (tb.fermi(w, 0.25, 1.0) + tb.fermi(w, -0.25, 1.0))
         gf_less_ref = -2.0j * f_ref * np.imag(1.0 / (w + 2.0 + 10.0j))
@@ -48,7 +48,7 @@ class TestQPCFrequencyDomain(unittest.TestCase):
     def test_gf_less_1(self):
         w = np.linspace(-50, 50, 1000)
         Q = 0.5
-        gf_less = self.QuantumDot.g_less(w, Q=Q)
+        gf_less = self.res.g_less(w, Q=Q)
 
         f_ref = 0.5 * (tb.fermi(w, 0.25, 1.0) + tb.fermi(w, -0.25, 1.0))
         gf_less_ref = -2.0j * f_ref * np.imag(1.0 / (w + 2.0 - 1.2 * Q + 10.0j))
