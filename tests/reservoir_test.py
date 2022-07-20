@@ -100,5 +100,35 @@ class TestQPCFrequencyDomain(unittest.TestCase):
         plt.show()
 
 
+class TestQPCFrequencyDomainEta(unittest.TestCase):
+    def setUp(self):
+        PP = PhysicsParameters()
+        PP.beta = 10.0
+        PP.D_res = 20.0
+        PP.eps_res = 0.2
+        PP.eta_res = 1.0
+        PP.bias_res = 0.0
+        PP.V_cap = 0.1
+        res = reservoir.QPC(PP)
+
+        self.PP = PP
+        self.res = res
+
+    def test_gf_reta_fermi_level(self):
+        gf_0 = self.res.g_reta(0.0, Q=0)
+        gf_1 = self.res.g_reta(1e-5, Q=0)
+        gf_2 = self.res.g_reta(-1e-5, Q=0)
+
+        testing.assert_allclose(gf_0, gf_1, atol=1e-4)
+        testing.assert_allclose(gf_0, gf_2, atol=1e-4)
+
+        gf_0 = self.res.delta_leads_R(0.0)
+        gf_1 = self.res.delta_leads_R(1e-5)
+        gf_2 = self.res.delta_leads_R(-1e-5)
+
+        testing.assert_allclose(gf_0, gf_1, atol=1e-4)
+        testing.assert_allclose(gf_0, gf_2, atol=1e-4)
+
+
 if __name__ == "__main__":
     unittest.main()

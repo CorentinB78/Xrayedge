@@ -239,6 +239,7 @@ class QPC(TwoLeadsReservoir):
         """
         Retarded hybridization function in frequencies for left and right leads (together).
         """
+        w_array = np.asarray(w_array)
         t = self.PP.D_res / 2.0  # hopping
         sc_gf = tb.semicirc_retarded_gf(t)
         return 2.0 * t**2 * sc_gf(w_array - 2.0 * t + self.PP.eta_res * 1j)
