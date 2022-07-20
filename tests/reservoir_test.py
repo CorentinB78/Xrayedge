@@ -6,7 +6,7 @@ from xrayedge import reservoir
 import toolbox as tb
 
 
-class TestQPCFrequencyDomain(unittest.TestCase):
+class TestQuantumDotFrequencyDomain(unittest.TestCase):
     def setUp(self):
         PP = PhysicsParameters()
         PP.beta = 1.0
