@@ -5,10 +5,11 @@ from copy import copy
 
 
 class Reservoir:
+    """
+    Abstract class for a generic reservoir.
+    """
+
     def __init__(self):
-        """
-        Abstract class for a generic reservoir.
-        """
         self.N = 3  # nr of different charge states affecting the QPC
 
         self._cache_g_less_t = [None] * self.N
@@ -59,22 +60,14 @@ class Reservoir:
         return self._cache_g_grea_t[Q]
 
 
-class QuantumDot(Reservoir):
+class TwoLeadsReservoir(Reservoir):
+    """
+    Abstract class for a two-lead reservoir. A type of reservoir with a central site coupled to two baths with a chemical potential difference.
+    """
+
     def __init__(
         self, physics_params, nr_samples_fft=None, w_max=None, max_fft_size=int(1e7)
     ):
-        """
-        Quantum Dot. A type of reservoir with a central site coupled to two baths of infintie bandwidth and with a chemical potential difference.
-
-        Provides real time Green functions at the central site for different charge offsets Q.
-
-        Arguments:
-            physics_params -- a class with parameters `D_res`, `eps_res`, `bias_res`, `beta` and `V_cap`.
-
-        Keyword Arguments:
-            nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
-            w_max -- max frequency for FFT (default: {None} which auto determine an optimal value)
-        """
         super().__init__()
         self.PP = copy(physics_params)
 
@@ -112,13 +105,13 @@ class QuantumDot(Reservoir):
 
     def delta_leads_R(self, w_array):
         """
-        Retarded hybridization function in frequencies for left and right leads (together) of QuantumDot.
+        Retarded hybridization function in frequencies for left and right leads (together).
         """
-        return -1j * self.PP.D_res * np.ones_like(w_array)
+        raise NotImplementedError
 
     def delta_leads_K(self, w_array):
         """
-        Keldysh hybridization function in frequencies for left and right leads (together) of QuantumDot.
+        Keldysh hybridization function in frequencies for left and right leads (together).
         """
         return (
             -2j
@@ -132,22 +125,19 @@ class QuantumDot(Reservoir):
 
     def g_reta(self, w_array, Q):
         """
-        Retarded GF in frequencies of QuantumDot's central site.
+        Retarded GF in frequencies of central site.
         """
-        w_array = np.asarray(w_array)
-        return 1.0 / (
-            w_array - self.PP.eps_res - Q * self.PP.V_cap - self.delta_leads_R(w_array)
-        )
+        raise NotImplementedError
 
     def g_keld(self, w_array, Q):
         """
-        Keldysh GF in frequencies of QuantumDot's central site.
+        Keldysh GF in frequencies of central site.
         """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * self.delta_leads_K(w_array)
 
     def g_less(self, w_array, Q):
         """
-        Lesser GF in frequencies of QuantumDot's central site.
+        Lesser GF in frequencies of central site.
         """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * (
             0.5 * self.delta_leads_K(w_array)
@@ -156,7 +146,7 @@ class QuantumDot(Reservoir):
 
     def g_grea(self, w_array, Q):
         """
-        Greater GF in frequencies of QuantumDot's central site.
+        Greater GF in frequencies of central site.
         """
         return np.abs(self.g_reta(w_array, Q)) ** 2 * (
             0.5 * self.delta_leads_K(w_array)
@@ -188,3 +178,78 @@ class QuantumDot(Reservoir):
         g_less = self.g_less(w, Q=Q)
 
         return integrate.simpson(y=g_less.imag, dx=dw) / (2 * np.pi)
+
+
+class QuantumDot(TwoLeadsReservoir):
+    """
+    Quantum Dot. A type of reservoir with a central site coupled to two baths of infintie bandwidth and with a chemical potential difference.
+
+    Provides real time Green functions at the central site for different charge offsets Q.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Arguments:
+            physics_params -- a class with parameters `D_res`, `eps_res`, `bias_res`, `beta` and `V_cap`.
+
+        Keyword Arguments:
+            nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
+            w_max -- max frequency for FFT (default: {None} which auto determine an optimal value)
+        """
+        super().__init__(*args, **kwargs)
+
+    def delta_leads_R(self, w_array):
+        """
+        Retarded hybridization function in frequencies for left and right leads (together).
+        """
+        return -1j * self.PP.D_res * np.ones_like(w_array)
+
+    def g_reta(self, w_array, Q):
+        """
+        Retarded GF in frequencies of central site.
+        """
+        w_array = np.asarray(w_array)
+        return 1.0 / (
+            w_array - self.PP.eps_res - Q * self.PP.V_cap - self.delta_leads_R(w_array)
+        )
+
+
+class QPC(TwoLeadsReservoir):
+    """
+    Quantum Point Contact. A type of reservoir with a central site coupled to two semicircular baths and with a chemical potential difference.
+
+    Provides real time Green functions at the central site for different charge offsets Q.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Arguments:
+            physics_params -- a class with parameters `D_res`, `eps_res`, `eta_res`, `bias_res`, `beta` and `V_cap`.
+
+        Keyword Arguments:
+            nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
+            w_max -- max frequency for FFT (default: {None} which auto determine an optimal value)
+        """
+        super().__init__(*args, **kwargs)
+
+    def delta_leads_R(self, w_array):
+        """
+        Retarded hybridization function in frequencies for left and right leads (together).
+        """
+        t = self.PP.D_res / 2.0  # hopping
+        sc_gf = tb.semicirc_retarded_gf(t)
+        return 2.0 * t**2 * sc_gf(w_array - 2.0 * t + self.PP.eta_res * 1j)
+
+    def g_reta(self, w_array, Q):
+        """
+        Retarded GF in frequencies of central site.
+        """
+        w_array = np.asarray(w_array)
+        return 1.0 / (
+            w_array
+            + self.PP.eta_res * 1j
+            - self.PP.eps_res
+            - self.PP.D_res
+            - Q * self.PP.V_cap
+            - self.delta_leads_R(w_array)
+        )
