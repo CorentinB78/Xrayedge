@@ -179,6 +179,9 @@ class TwoLeadsReservoir(Reservoir):
 
         return integrate.simpson(y=g_less.imag, dx=dw) / (2 * np.pi)
 
+    def transmission(self, w_array, Q):
+        return self.delta_leads_R(w_array).imag * self.g_reta(w_array, Q).imag
+
 
 class QuantumDot(TwoLeadsReservoir):
     """

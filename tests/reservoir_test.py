@@ -85,6 +85,20 @@ class TestQPCFrequencyDomain(unittest.TestCase):
         mask = w > 20.0
         testing.assert_allclose(gf_reta[mask].imag, 0.0)
 
+    def test_transmission(self):
+        w = np.linspace(-10, 10, 1000)
+        transm = self.res.transmission(w, Q=0)
+
+        mask = w < 0.0
+        testing.assert_allclose(transm[mask], 0.0)
+
+        mask = np.logical_and(w >= 0, w <= 20.0)
+        transm_ref = (20.0 - w) * w / (5.0**2 + (20.0 - w) * w)
+        testing.assert_allclose(transm[mask], transm_ref[mask], atol=1e-5)
+
+        plt.plot(w, transm)
+        plt.show()
+
 
 if __name__ == "__main__":
     unittest.main()
