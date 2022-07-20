@@ -36,7 +36,6 @@ class PhysicsParameters(Parameters):
         V_cap=1.0,
         eps_QD=0.0,
         eps_QPC=0.0,
-        mu_QPC=0.0,
         D_QPC=1.0,
         U=0.0,
     ):
@@ -48,7 +47,6 @@ class PhysicsParameters(Parameters):
         self.V_cap = V_cap  # = dV/dQ
         self.eps_QD = eps_QD  # on the QD
         self.eps_QPC = eps_QPC  # on the QPC
-        self.mu_QPC = mu_QPC
         self.D_QPC = D_QPC
         self.U = U
 

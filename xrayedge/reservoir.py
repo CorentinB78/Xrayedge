@@ -82,8 +82,8 @@ class QPC(Reservoir):
         centers = np.array(
             [
                 self.PP.eps_QPC,
-                self.PP.mu_QPC + 0.5 * self.PP.bias_QPC,
-                self.PP.mu_QPC - 0.5 * self.PP.bias_QPC,
+                +0.5 * self.PP.bias_QPC,
+                -0.5 * self.PP.bias_QPC,
             ]
         )
 
@@ -123,10 +123,8 @@ class QPC(Reservoir):
         return (
             -2j
             * (
-                tb.fermi(w_array, self.PP.mu_QPC + 0.5 * self.PP.bias_QPC, self.PP.beta)
-                + tb.fermi(
-                    w_array, self.PP.mu_QPC - 0.5 * self.PP.bias_QPC, self.PP.beta
-                )
+                tb.fermi(w_array, 0.5 * self.PP.bias_QPC, self.PP.beta)
+                + tb.fermi(w_array, -0.5 * self.PP.bias_QPC, self.PP.beta)
                 - 1.0
             )
             * np.imag(self.delta_leads_R(w_array))

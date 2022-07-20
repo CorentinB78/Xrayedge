@@ -82,7 +82,6 @@ class TestAPlusReta(unittest.TestCase):
         PP.V_cap = 1.0
         PP.bias_QPC = 0.0
         PP.eps_QPC = 0.0
-        PP.mu_QPC = 0.0
         PP.D_QPC = 3.0
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
@@ -120,7 +119,6 @@ class TestCompareWithAnalytic(unittest.TestCase):
         PP.V_cap = 1.0
         PP.bias_QPC = 0.0
         PP.eps_QPC = 0.0
-        PP.mu_QPC = 0.0
         PP.D_QPC = 3.0
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
@@ -134,7 +132,7 @@ class TestCompareWithAnalytic(unittest.TestCase):
         C_vals = CS.C(0, 0, tt)
         slope_real = (C_vals[-1].real - C_vals[-2].real) / (tt[-1] - tt[-2])
 
-        v_fermi = -1.0 / CS.reservoir.g_reta(np.asarray([PP.mu_QPC]), Q=0)[0].imag
+        v_fermi = -1.0 / CS.reservoir.g_reta(np.asarray([0.0]), Q=0)[0].imag
         slope_real_ref = -np.arctan(PP.V_cap / v_fermi) ** 2 / (PP.beta * np.pi)
 
         self.assertAlmostEqual(slope_real, slope_real_ref, 2)
@@ -159,7 +157,6 @@ class TestRenormalizedEnergies(unittest.TestCase):
         PP.V_cap = 0.1
         PP.bias_QPC = 0.0
         PP.eps_QPC = 0.0
-        PP.mu_QPC = 0.0
         PP.D_QPC = 3.0
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
