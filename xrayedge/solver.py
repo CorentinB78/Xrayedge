@@ -58,9 +58,10 @@ class AccuracyParameters(Parameters):
     Parameters:
         time_extrapolate -- Solve up to this time, extrapolate beyond
         tol_C -- tolerance in integrating dC/dt = V phi
-        delta_interp_phi -- time step in quasi Dyson solver to compute phi. Should be smaller than timescale of variation of bare g.
         method -- method for quasi Dyson solver, one of "cheb", "trapz", "trapz-LU", "trapz-GMRES"
     """
+
+    # TODO: update docstring
 
     def __init__(
         self,

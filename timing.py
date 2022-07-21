@@ -23,7 +23,6 @@ AP = xray.AccuracyParameters(
     PP,
     time_extrapolate=tmax,
     tol_C=1e-3,
-    delta_interp_phi=0.02,
     fft_w_max=500.0,
     fft_nr_samples=500000,
     method="trapz",

@@ -14,7 +14,7 @@ class TestXRayEdgeSolver(unittest.TestCase):
         AP = AccuracyParameters(time_extrapolate=10.0)
         AP.method = "cheb"
         AP.tol_C = 1e-4
-        AP.delta_interp_phi = 0.05
+        AP.qdyson_rtol = 1e-4
 
         model = XRayEdgeSolver(PP, AP)
         times = np.linspace(-20.0, 19.0, 10)

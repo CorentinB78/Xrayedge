@@ -51,7 +51,6 @@ class TestCorrelatorSolver(unittest.TestCase):
         AP = xray.AccuracyParameters(time_extrapolate=10.0)
         AP.method = "trapz"
         AP.tol_C = (1e-2,)
-        AP.delta_interp_phi = 0.05
 
         solver = xray.CorrelatorSolver(xray.QuantumDot(PP), PP.V_cap, AP)
         times = np.linspace(0.0, 10.0, 11)
@@ -88,7 +87,6 @@ class TestAPlusReta(unittest.TestCase):
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
         AP.tol_C = 0.0001
-        AP.delta_interp_phi = 0.01
         AP.method = "trapz"
         AP.nr_samples_fft = int(1e6)
 
@@ -125,7 +123,6 @@ class TestCompareWithAnalytic(unittest.TestCase):
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
         AP.tol_C = 0.0001
-        AP.delta_interp_phi = 0.01
         AP.method = "trapz"
         AP.nr_samples_fft = int(1e6)
 
@@ -163,7 +160,6 @@ class TestRenormalizedEnergies(unittest.TestCase):
 
         AP = xray.AccuracyParameters(time_extrapolate=100.0)
         AP.tol_C = 0.0001
-        AP.delta_interp_phi = 0.01
         AP.method = "trapz"
         AP.nr_samples_fft = int(1e6)
 
