@@ -227,7 +227,7 @@ class QPC(TwoLeadsReservoir):
     def __init__(self, *args, **kwargs):
         """
         Arguments:
-            physics_params -- a class with parameters `D_res`, `eps_res`, `eta_res`, `bias_res`, `beta` and `V_cap`.
+            physics_params -- a class with parameters `D_res`, `eps_res`, `mu_res`, `eta_res`, `bias_res`, `beta` and `V_cap`.
 
         Keyword Arguments:
             nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
@@ -242,7 +242,11 @@ class QPC(TwoLeadsReservoir):
         w_array = np.asarray(w_array)
         t = self.PP.D_res / 2.0  # hopping
         sc_gf = tb.semicirc_retarded_gf(t)
-        return 2.0 * t**2 * sc_gf(w_array - 2.0 * t + self.PP.eta_res * 1j)
+        return (
+            2.0
+            * t**2
+            * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
+        )
 
     def g_reta(self, w_array, Q):
         """
@@ -251,6 +255,7 @@ class QPC(TwoLeadsReservoir):
         w_array = np.asarray(w_array)
         return 1.0 / (
             w_array
+            + self.PP.mu_res
             + self.PP.eta_res * 1j
             - self.PP.eps_res
             - self.PP.D_res
