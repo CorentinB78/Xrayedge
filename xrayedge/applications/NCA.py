@@ -7,7 +7,6 @@ from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
 from ..reservoir import QuantumDot
 import bisect
 
-# TODO: rename
 # TODO: test energy shifts
 
 
@@ -67,26 +66,6 @@ class XrayForNCASolver:
         return self.PP.eps_sys + 1j * slope
 
 
-def checked_interp(x, xp, fp, rtol, atol, **kwargs):
-    """
-    Assumed x regularly spaced
-    """
-    interp = interpolate.interp1d(xp, fp, **kwargs)
-    f = interp(x)
-    f_half = interp(x[::2])
-    f_half = np.interp(x, x[::2], f_half)
-
-    diff = np.abs(f_half - f)
-    err = np.max(diff - rtol * np.abs(f) - atol)
-
-    if err > 0:
-        print(
-            f"XXX [Xray] low number of samples for interp: max abs err={np.max(diff)}, max rel err={np.max(diff / np.abs(f))}"
-        )
-
-    return f
-
-
 def tangent_exp(x, y, x0=None, idx=None):
     """
     Return function of x of the form a.e^{bx}, so that it is tangent to y(x) at x=x0.
@@ -142,98 +121,133 @@ def tangent_power_law(x, y, x0=None, idx=None):
     return lambda t: f0 * (t / x0) ** b
 
 
-def extrap_G_reta_w(x, xp, yp, tol, rtol=1e-2, atol=1e-4, plot=False):
+class GFWithTails:
+    def __init__(self, omegas, gf_vals, en_shift):
+        self._omegas = omegas
+        self._gf_vals = gf_vals
+        self._en_shift = en_shift
 
-    ### real part
-    x0 = xp[-1] / 10.0
-    assert x0 > 0.0
-    f_real = np.empty_like(x)
-    mask = x > x0
-    f_real[mask] = tangent_power_law(xp, yp.real, x0=x0)(x[mask])
-    mask = x < -x0
-    f_real[mask] = tangent_power_law(xp, yp.real, x0=-x0)(x[mask])
-    mask = np.abs(x) <= x0
-    f_real[mask] = checked_interp(
-        x[mask],
-        xp,
-        yp.real,
-        rtol=rtol,
-        atol=atol,
-        kind="cubic",
-        assume_sorted=True,
-        copy=False,
-    )
+        self._central_interp = interpolate.CubicSpline(
+            omegas,
+            gf_vals,
+            bc_type="natural",
+            extrapolate=False,
+        )
+        self._real_bounds = [None, None]
+        self._imag_bounds = [None, None]
+        self._pos_real_tail = None  # callable for the real part of the w > 0 tail
+        self._pos_imag_tail = None  # callable for the imag part of the w > 0 tail
+        self._neg_real_tail = None  # callable for the real part of the w < 0 tail
+        self._neg_imag_tail = None  # callable for the imag part of the w < 0 tail
 
-    if plot:
-        plt.plot(x, f_real, "--")
-        plt.plot(xp, yp.real)
+        self._vec_call = np.vectorize(self._call)
+
+    def extrap_tails(self, tol):
+        self._tol = tol
+        xp = self._omegas
+        yp = self._gf_vals
+
+        ### real part
+        x0 = xp[-1] / 10.0
+        self._real_bounds = [-x0, x0]
+        assert x0 > 0.0
+        self._pos_real_tail = tangent_power_law(xp, yp.real, x0=x0)
+        self._neg_real_tail = tangent_power_law(xp, yp.real, x0=-x0)
+
+        ### imag part
+        mask = -yp.imag > tol
+
+        idx_left = np.nonzero(mask)[0][0]
+        idx_right = np.nonzero(mask)[0][-1]
+
+        self._imag_bounds = [xp[idx_left], xp[idx_right]]
+
+        self._neg_imag_tail = tangent_exp(xp, yp.imag, idx=idx_left)
+        self._pos_imag_tail = tangent_power_law(xp, yp.imag, idx=idx_right)
+
+    def check_norm(self):
+        norm_re, err_re = integrate.quad(
+            lambda w: self._call(w + self._en_shift).real
+            + self._call(-w + self._en_shift).real,
+            0.0,
+            np.inf,
+        )
+        norm_im, err_im = integrate.quad(
+            lambda w: self._call(w + self._en_shift).imag
+            + self._call(-w + self._en_shift).imag,
+            0.0,
+            np.inf,
+        )
+        norm = -(norm_re + 1j * norm_im) / np.pi
+
+        norm_err = np.abs(norm - 1.0j)
+        if norm_err > 1e-1:
+            print(f"XXX Norm F_reta_w = {norm}")
+        elif norm_err > 1e-2:
+            print(f"/!\ Norm F_reta_w = {norm}")
+
+    def _call(self, omega):
+        omega -= self._en_shift
+        if omega < self._real_bounds[0]:
+            f_real = self._neg_real_tail(omega)
+        elif omega <= self._real_bounds[1]:
+            f_real = self._central_interp(omega).real
+        else:
+            f_real = self._pos_real_tail(omega)
+
+        if omega < self._imag_bounds[0]:
+            f_imag = self._neg_imag_tail(omega)
+        elif omega <= self._real_bounds[1]:
+            f_imag = self._central_interp(omega).imag
+        else:
+            f_imag = self._pos_imag_tail(omega)
+
+        return f_real + 1.0j * f_imag
+
+    def __call__(self, omega):
+        return self._vec_call(omega)
+
+    def plot(self, omegas):
+        x = omegas
+        f = self(x + self._en_shift)  # unshift first
+
+        # real part
+
+        plt.plot(x, f.real, "--")
+        plt.plot(self._omegas, self._gf_vals.real)
 
         plt.loglog()
         tb.autoscale_y(logscale=True)
 
-        plt.axvline(x0, c="k", ls=":", alpha=0.4)
+        plt.axvline(self._real_bounds[1], c="k", ls=":", alpha=0.4)
         plt.show()
 
-        plt.plot(-x, -f_real, "--")
-        plt.plot(-xp, -yp.real)
+        plt.plot(-x, -f.real, "--")
+        plt.plot(-self._omegas, -self._gf_vals.real)
 
         plt.loglog()
         tb.autoscale_y(logscale=True)
 
-        plt.axvline(x0, c="k", ls=":", alpha=0.4)
+        plt.axvline(-self._real_bounds[0], c="k", ls=":", alpha=0.4)
         plt.show()
 
-    ### imag part
-    mask = -yp.imag > tol
-
-    idx_left = np.nonzero(mask)[0][0]
-    idx_right = np.nonzero(mask)[0][-1]
-
-    f_imag = np.empty_like(x)
-    mask = x < xp[idx_left]
-    f_imag[mask] = tangent_exp(xp, yp.imag, idx=idx_left)(x[mask])
-    mask = x > xp[idx_right]
-    f_imag[mask] = tangent_power_law(xp, yp.imag, idx=idx_right)(x[mask])
-    mask = np.logical_and(x >= xp[idx_left], x <= xp[idx_right])
-    f_imag[mask] = checked_interp(
-        x[mask],
-        xp,
-        yp.imag,
-        rtol=rtol,
-        atol=atol,
-        kind="cubic",
-        assume_sorted=True,
-        copy=False,
-    )
-
-    if plot:
-        plt.plot(xp, -yp.imag)
+        # imag part
+        plt.plot(self._omegas, -self._gf_vals.imag)
         plt.xlim(*plt.xlim())  # freeze xlim
         plt.semilogy()
         tb.autoscale_y(logscale=True)
 
-        plt.plot(x, -f_imag, "--")
+        plt.plot(x, -f.imag, "--")
 
-        plt.axhline(tol, c="k", ls=":", alpha=0.4)
-        plt.axvline(xp[idx_left], c="k", ls=":", alpha=0.4)
-        plt.axvline(xp[idx_right], c="k", ls=":", alpha=0.4)
+        plt.axhline(self._tol, c="k", ls=":", alpha=0.4)
+        plt.axvline(self._imag_bounds[0], c="k", ls=":", alpha=0.4)
+        plt.axvline(self._imag_bounds[1], c="k", ls=":", alpha=0.4)
 
         plt.show()
 
-    f = f_real + 1j * f_imag
+        ### plot inverse
 
-    ### check norm
-
-    norm_err = np.abs(-integrate.simpson(x=x, y=f) - np.pi * 1j)
-    if norm_err > 1e-1:
-        print(f"XXX Norm F_reta_w = {integrate.simpson(x=x, y=f)}")
-    elif norm_err > 1e-2:
-        print(f"/!\ Norm F_reta_w = {integrate.simpson(x=x, y=f)}")
-
-    ### plot inverse
-
-    if plot:
-        plt.plot(xp, np.imag(1.0 / yp))
+        plt.plot(self._omegas, np.imag(1.0 / self._gf_vals))
 
         plt.xlim(*plt.xlim())  # freeze xlim
         plt.semilogy()
@@ -242,5 +256,3 @@ def extrap_G_reta_w(x, xp, yp, tol, rtol=1e-2, atol=1e-4, plot=False):
         plt.plot(x, np.imag(1.0 / f), "--")
 
         plt.show()
-
-    return f
