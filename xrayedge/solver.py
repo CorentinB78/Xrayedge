@@ -226,9 +226,8 @@ class CorrelatorSolver:
 
         times, C_vals, err = cum_int_adapt_simpson(
             lambda t: self.phi(sign, Q, t, use_cache_N=True, cache_N=True),
-            scale=self.AP.time_extrapolate,
+            self.AP.time_extrapolate,
             tol=self.AP.tol_C,
-            extend=False,
         )
         C_vals *= -sign * self.V
         err *= np.abs(self.V)
