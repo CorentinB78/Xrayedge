@@ -144,7 +144,7 @@ class CorrelatorSolver:
         """
         return np.exp(self.C(1, Q, times))
 
-    def A_plus_reta_w(self, Q, nr_freqs):
+    def A_plus_reta_w(self, Q, nr_freqs, freq_res_factor=0.1):
         """
         FT of A^+_Q(t) theta(t)
 
@@ -155,7 +155,7 @@ class CorrelatorSolver:
 
         intercept, slope = self._cache_C_tail[type][Q]
 
-        times = np.linspace(0, 10.0 / np.abs(slope.real), nr_freqs)
+        times = np.linspace(0, 1.0 / (freq_res_factor * np.abs(slope.real)), nr_freqs)
         C_vals = self.C(type, Q, times)
 
         # shift energy

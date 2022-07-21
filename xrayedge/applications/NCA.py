@@ -11,7 +11,7 @@ import bisect
 # TODO: test energy shifts
 
 
-class NCASolver:
+class XrayForNCASolver:
     """
     Solver for computing Pseudo-particle Green functions of an Anderson impurity capacitively coupled to a QPC.
     """
@@ -41,17 +41,19 @@ class NCASolver:
             * self.correlator_solver.A_plus(0, t_array)
         )
 
-    def G_reta_w(self, nr_freqs):
+    def G_reta_w(self, nr_freqs, freq_res_factor=0.1):
         """
         Pseudo-particle greater-retarded Green function in frequencies on the QD.
 
-        For NCA in the steady state regime, one only needs the greater quaisparticle GFs in the sector Q=0 (see notes).
+        For NCA in the steady state regime, one only needs the greater quasiparticle GFs in the sector Q=0 (see notes).
         Also, the partition function is reduced to 1.
 
         Returns: freqs, G_grea, energy shift
         """
         # no U in NCA constraint
-        w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(0, nr_freqs)
+        w, A_w, energy_shift = self.correlator_solver.A_plus_reta_w(
+            0, nr_freqs, freq_res_factor=freq_res_factor
+        )
         return w, -1j * A_w, energy_shift + self.PP.eps_sys
 
     def G_reta_w_lorentzian_approx(self):
