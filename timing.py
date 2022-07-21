@@ -11,30 +11,22 @@ import cProfile
 
 PP = xray.PhysicsParameters()
 
-PP.beta = 100.0
-PP.bias_res = 0.0
-PP.eps_res = 0.0
-PP.Gamma = 1.0
-PP.V_cap = 5.0
-
-tmax = 100.0
+tmax = 30.0
 
 AP = xray.AccuracyParameters(
-    PP,
     time_extrapolate=tmax,
     tol_C=1e-3,
-    fft_w_max=500.0,
-    fft_nr_samples=500000,
     method="trapz",
 )
 
-model = xray.NumericModel(PP, AP)
+qpc = xray.QPC(PP)
+solver = xray.CorrelatorSolver(qpc, PP.V_cap, AP)
 
 start = time.time()
 start_full = time.process_time()
 
 # cProfile.run("model.compute_C(type=0, Q=0)")
-err = model.compute_C(type=0, Q=0)
+err = solver.compute_C(type=0, Q=0, ignore_cache=True)
 
 full_run_time = time.process_time() - start_full
 run_time = time.time() - start
@@ -46,5 +38,5 @@ print(f"Error: {err}")
 print()
 
 times = np.linspace(0.0, tmax, 300)
-plt.plot(times, model.C(0, 0, times).real)
+plt.plot(times, solver.C(0, 0, times).real)
 plt.show()
