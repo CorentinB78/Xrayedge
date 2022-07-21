@@ -2,6 +2,7 @@ import numpy as np
 from scipy import interpolate
 import toolbox as tb
 from copy import copy
+import bisect
 from .integral_solvers import solve_quasi_dyson_last_time, cum_semiinf_adpat_simpson
 
 # TODO parallelize?
@@ -216,8 +217,11 @@ class CorrelatorSolver:
         else:
             raise ValueError
 
+        self._start_N = []
+        self._times = []
+
         times, C_vals, err = cum_semiinf_adpat_simpson(
-            lambda t: self.phi(sign, Q, t),
+            lambda t: self.phi(sign, Q, t, use_cache_N=True, cache_N=True),
             scale=self.AP.time_extrapolate,
             tol=self.AP.tol_C,
             extend=False,
@@ -238,13 +242,18 @@ class CorrelatorSolver:
 
         return err
 
-    def phi(self, sign, Q, t, start_N=None):
+    def phi(self, sign, Q, t, start_N=None, use_cache_N=False, cache_N=False):
         """
         Computes \phi_t(t, t^+) using the quasi Dyson equation.
         """
         assert t >= 0.0
         if np.abs(t) < 1e-10:
             return self.reservoir.g_less_t_fun(Q)(0.0)
+
+        if use_cache_N and len(self._times) > 0:
+            idx = bisect.bisect(self._times, t)
+            if idx != 0:
+                start_N = self._start_N[idx - 1]
 
         phi_t, err, N = solve_quasi_dyson_last_time(
             self.reservoir.g_less_t_fun(Q),
@@ -259,6 +268,12 @@ class CorrelatorSolver:
             atol_gmres=self.AP.atol_gmres,
             max_N=self.AP.qdyson_max_N,
         )
+
+        if cache_N:
+            idx = bisect.bisect(self._times, t)
+            self._times.insert(idx, t)
+            self._start_N.insert(idx, N // 2)
+
         return phi_t
 
     ### getters ###
