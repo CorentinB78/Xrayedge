@@ -3,7 +3,7 @@ from scipy import interpolate
 import toolbox as tb
 from copy import copy
 import bisect
-from .integral_solvers import solve_quasi_dyson_last_time, cum_semiinf_adpat_simpson
+from .integral_solvers import solve_quasi_dyson_last_time, cum_int_adapt_simpson
 
 # TODO parallelize?
 # TODO cleanup notes!
@@ -69,7 +69,7 @@ class AccuracyParameters(Parameters):
         time_extrapolate,
         tol_C=1e-2,
         qdyson_rtol=1e-5,
-        qdyson_atol=1e-5,
+        qdyson_atol=1e-10,
         method="trapz",
         tol_gmres=1e-10,
         atol_gmres=1e-10,
@@ -101,6 +101,10 @@ def gen_params(accuracy_params, gmres=False):
     params = copy(accuracy_params)
     params.tol_C *= 10.0
     yield params, "tol_C"
+
+    params = copy(accuracy_params)
+    params.qdyson_rtol *= 10.0
+    yield params, "qdyson_rtol"
 
     if gmres:
         params = copy(accuracy_params)
@@ -220,7 +224,7 @@ class CorrelatorSolver:
         self._start_N = []
         self._times = []
 
-        times, C_vals, err = cum_semiinf_adpat_simpson(
+        times, C_vals, err = cum_int_adapt_simpson(
             lambda t: self.phi(sign, Q, t, use_cache_N=True, cache_N=True),
             scale=self.AP.time_extrapolate,
             tol=self.AP.tol_C,

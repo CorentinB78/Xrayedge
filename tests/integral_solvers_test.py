@@ -275,7 +275,7 @@ class TestCumAdaptIntegrator(unittest.TestCase):
         def f(x):
             return 10 * np.exp(-x * 3.0) * np.sin(x) + (3 * x) / (2.0 * x + 6.0)
 
-        x_cum, cum, err = xray.cum_semiinf_adpat_simpson(f, 20.0, tol=1e-10)
+        x_cum, cum, err = xray.cum_int_adapt_simpson(f, 20.0, tol=1e-10)
 
         ref = 21.834031327325317  # integral from 0 to 20
 
@@ -288,7 +288,7 @@ class TestCumAdaptIntegrator(unittest.TestCase):
         def f(x):
             return np.exp(-(x**2))
 
-        x_cum, cum, err = xray.cum_semiinf_adpat_simpson(f, 10.0, tol=1e-10)
+        x_cum, cum, err = xray.cum_int_adapt_simpson(f, 10.0, tol=1e-10)
 
         ref = np.sqrt(np.pi) / 2.0
 
@@ -298,11 +298,31 @@ class TestCumAdaptIntegrator(unittest.TestCase):
         def f(x):
             return x**3 - x**5
 
-        x_cum, cum, err = xray.cum_semiinf_adpat_simpson(f, 2.0, tol=1e-10)
+        x_cum, cum, err = xray.cum_int_adapt_simpson(f, 2.0, tol=1e-10)
 
         ref = 4.0 - 32.0 / 3.0
 
         np.testing.assert_allclose(cum[-1], ref, atol=1e-10)
+
+    def test_sin(self):
+        def f(x):
+            return np.cos(x)
+
+        x_cum, cum, err = xray.cum_int_adapt_simpson(f, 250.0, tol=1e-10)
+        print(err)
+        print(np.max(cum - np.sin(x_cum)))
+
+        np.testing.assert_allclose(cum, np.sin(x_cum), atol=1e-10)
+
+    def test_exp(self):
+        def f(x):
+            return np.exp(-x)
+
+        x_cum, cum, err = xray.cum_int_adapt_simpson(f, 2000.0, tol=1e-10)
+        print(err)
+        print(np.max(cum - 1.0 + np.exp(-x_cum)))
+
+        np.testing.assert_allclose(cum, 1.0 - np.exp(-x_cum), atol=1e-10)
 
 
 if __name__ == "__main__":

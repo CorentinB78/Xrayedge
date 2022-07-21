@@ -262,25 +262,24 @@ def solve_quasi_dyson_last_time(
 ### Cumulated adaptative integral
 
 
-def cum_semiinf_adpat_simpson(
-    f, scale=1.0, tol=1e-8, slopetol=1e-8, extend=False, maxfeval=100000
-):
+def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000):
     """
     Adaptative simpson cumulative integral (antiderivative) of `f`, starting from x=0 toward x > 0.
-    Assumes `f` goes to a constant value at x=+infinity.
 
-    If `extend` is True, samples increasing values of x until the slope of f is smaller than `slopetol`.
-    Refine the sampling until the polynomial interpolation corresponding to the Simpson rule proves accurate up to `tol`.
-    `scale` gives the size of the initial Simpson segment.
+    Arguments:
+        f -- real or complex valued callable
+        xmax -- antiderivatible is returned on range [0, xmax]
 
-    Returns x_cumint, cumint, err
-    `cumint` is an array containing the antiderivative at points `x_cumint`.
-    `err` is an upper bound of the integration error.
+    Keyword Arguments:
+        tol -- absolute tolerance in the antiderivative (default: {1e-8})
+        maxfeval -- max number of `f` evaluations (default: {100000})
+
+    Returns:
+        (coordinates, antiderivative, error) -- three 1D arrays
     """
-    bound_left = 0.0
 
-    a = bound_left
-    b = bound_left + np.abs(scale)
+    a = 0.0
+    b = xmax
     m = (a + b) / 2
     x = [a, m, b]
     y = [f(a), f(m), f(b)]
@@ -295,29 +294,7 @@ def cum_semiinf_adpat_simpson(
             break
 
         if i == len(x) - 1:  # end segment
-
-            if extend:  # check slope and add segment if necessary
-                slope = max(
-                    (y[-5] - 4 * y[-3] + 3 * y[-1]) / (x[-1] - x[-5]),
-                    (y[-3] - 4 * y[-2] + 3 * y[-1]) / (x[-1] - x[-3]),
-                )
-
-                if np.abs(slope) < slopetol:
-                    break  # finished!
-
-                else:  # add segment
-                    a = x[-1]
-                    l = a - x[-5]
-                    x.append(a + l)
-                    y.append(f(x[-1]))
-                    x.append(a + 2 * l)
-                    y.append(f(x[-1]))
-                    feval += 2
-
-                    # then work on new segment
-
-            else:  # we don't check slope
-                break  # finished!
+            break  # finished!
 
         # bulk segment
         int1_estimate = (x[i + 2] - x[i]) * (5 * y[i] + 8 * y[i + 1] - y[i + 2]) / 24.0
