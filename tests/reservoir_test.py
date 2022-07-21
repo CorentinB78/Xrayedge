@@ -4,7 +4,6 @@ from numpy import testing
 from xrayedge import PhysicsParameters
 from xrayedge import reservoir
 import toolbox as tb
-import matplotlib.pyplot as plt
 
 
 class TestQuantumDotFrequencyDomain(unittest.TestCase):
@@ -95,9 +94,6 @@ class TestQPCFrequencyDomain(unittest.TestCase):
         mask = np.logical_and(w >= 0, w <= 20.0)
         transm_ref = (20.0 - w) * w / (5.0**2 + (20.0 - w) * w)
         testing.assert_allclose(transm[mask], transm_ref[mask], atol=1e-5)
-
-        plt.plot(w, transm)
-        plt.show()
 
 
 class TestQPCFrequencyDomainEta(unittest.TestCase):

@@ -35,6 +35,7 @@ class PhysicsParameters(Parameters):
         V_cap=1.0,
         eps_sys=0.0,
         eps_res=0.0,
+        mu_res=0.0,
         D_res=1.0,
         eta_res=0.01,
         U=0.0,
@@ -44,6 +45,7 @@ class PhysicsParameters(Parameters):
         self.V_cap = V_cap
         self.eps_sys = eps_sys
         self.eps_res = eps_res
+        self.mu_res = mu_res
         self.D_res = D_res
         self.eta_res = eta_res
         self.U = U
