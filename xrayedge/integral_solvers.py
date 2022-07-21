@@ -68,7 +68,7 @@ lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integral
 
 
 def solve_quasi_dyson(
-    g_less, g_grea, t, V, N, method="trapz", tol_gmres=1e-5, atol_gmres=1e-5
+    g_less, g_grea, t, V, N, method="trapz", tol_gmres=1e-10, atol_gmres=1e-10
 ):
     """
     Solve the following equation (for 0 <= u <= t):
@@ -166,6 +166,97 @@ def solve_quasi_dyson(
             return t_array, res
 
     raise ValueError(f'Method "{method}" not found.')
+
+
+def solve_quasi_dyson_last_time(
+    g_less,
+    g_grea,
+    t,
+    V,
+    rtol,
+    atol,
+    start_N=None,
+    method="trapz",
+    tol_gmres=1e-10,
+    atol_gmres=1e-10,
+    max_N=int(1e8),
+    verbose=False,
+):
+    """
+    Solve the following equation (for 0 <= u <= t):
+
+    f(u) = g(u - t) - V \int_0^t dv g(u - v) f(v)
+
+    with g(x) = \theta(x) g^>(x) + \theta(-x) g^<(x)
+
+    and returns f(t).
+
+    Arguments:
+        g_less -- vectorized callable for g^<
+        g_grea -- vectorized callable for g^>
+        t -- positive float
+        V -- real or complex parameter
+        rtol, atol -- relative and absolute tolerance. Discretization is refined until first one is reached
+
+    Keyword Arguments:
+        start_N -- int, starting resolution of discretization.
+        method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
+
+    Returns:
+        (value, error, final number of samples)
+    """
+    if start_N is None:
+        N = 10
+    else:
+        N = start_N
+
+    if atol_gmres > atol:
+        print("/!\ [Quasi Dyson] atol_gmres is larger than atol!")
+    if tol_gmres > rtol:
+        print("/!\ [Quasi Dyson] tol_gmres is larger than rtol!")
+
+    _, f_vals = solve_quasi_dyson(
+        g_less,
+        g_grea,
+        t,
+        V,
+        N,
+        method=method,
+        tol_gmres=tol_gmres,
+        atol_gmres=atol_gmres,
+    )
+    f = f_vals[-1]
+
+    while True:
+
+        if 2 * N > max_N:
+            print(f"/!\ [Quasi Dyson] max discretization reached while err={err}")
+            break
+
+        N *= 2
+
+        _, f_vals = solve_quasi_dyson(
+            g_less,
+            g_grea,
+            t,
+            V,
+            N,
+            method=method,
+            tol_gmres=tol_gmres,
+            atol_gmres=atol_gmres,
+        )
+        new_f = f_vals[-1]
+
+        err = abs(f - new_f)
+        f = new_f
+
+        if verbose:
+            print(f"{N}: \t val={f}, \t err={err}")
+
+        if err < atol or err < abs(f) * rtol:
+            break
+
+    return f, err, N
 
 
 ### Cumulated adaptative integral

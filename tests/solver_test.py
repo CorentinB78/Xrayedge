@@ -24,6 +24,8 @@ class TestCorrelatorSolver(unittest.TestCase):
     def test_cheb_vs_trapz(self):
         PP = xray.PhysicsParameters()
         AP = xray.AccuracyParameters(10.0)
+        AP.qdyson_rtol = 1e-2
+
         solver = xray.CorrelatorSolver(xray.QuantumDot(PP), 1.5, AP)
         times = np.linspace(0.0, 10.0, 20)
         Q = 0

@@ -2,7 +2,7 @@ import numpy as np
 from scipy import interpolate
 import toolbox as tb
 from copy import copy
-from .integral_solvers import solve_quasi_dyson, cum_semiinf_adpat_simpson
+from .integral_solvers import solve_quasi_dyson_last_time, cum_semiinf_adpat_simpson
 
 # TODO parallelize?
 # TODO cleanup notes!
@@ -66,24 +66,21 @@ class AccuracyParameters(Parameters):
         self,
         time_extrapolate,
         tol_C=1e-2,
-        delta_interp_phi=0.05,
+        qdyson_rtol=1e-5,
+        qdyson_atol=1e-5,
         method="trapz",
-        tol_gmres=1e-5,
-        atol_gmres=1e-5,
+        tol_gmres=1e-10,
+        atol_gmres=1e-10,
+        qdyson_max_N=int(1e8),
     ):
         self.time_extrapolate = time_extrapolate
         self.tol_C = tol_C
-        self.delta_interp_phi = delta_interp_phi
+        self.qdyson_rtol = qdyson_rtol
+        self.qdyson_atol = qdyson_atol
         self.method = method
         self.tol_gmres = tol_gmres
         self.atol_gmres = atol_gmres
-
-    def nr_pts_phi(self, t):
-        if self.method == "cheb":
-            return int(np.pi * np.sqrt(t / (2 * self.delta_interp_phi)) + 3)
-
-        ### default to linear grid
-        return int(t / self.delta_interp_phi + 3)
+        self.qdyson_max_N = qdyson_max_N
 
 
 def gen_params(accuracy_params, gmres=False):
@@ -102,10 +99,6 @@ def gen_params(accuracy_params, gmres=False):
     params = copy(accuracy_params)
     params.tol_C *= 10.0
     yield params, "tol_C"
-
-    params = copy(accuracy_params)
-    params.delta_interp_phi *= 2.0
-    yield params, "delta_interp_phi"
 
     if gmres:
         params = copy(accuracy_params)
@@ -244,7 +237,7 @@ class CorrelatorSolver:
 
         return err
 
-    def phi(self, sign, Q, t):
+    def phi(self, sign, Q, t, start_N=None):
         """
         Computes \phi_t(t, t^+) using the quasi Dyson equation.
         """
@@ -252,17 +245,20 @@ class CorrelatorSolver:
         if np.abs(t) < 1e-10:
             return self.reservoir.g_less_t_fun(Q)(0.0)
 
-        times, phi = solve_quasi_dyson(
+        phi_t, err, N = solve_quasi_dyson_last_time(
             self.reservoir.g_less_t_fun(Q),
             self.reservoir.g_grea_t_fun(Q),
             t,
             -sign * self.V,
-            self.AP.nr_pts_phi(t),
+            self.AP.qdyson_rtol,
+            self.AP.qdyson_atol,
+            start_N=start_N,
             method=self.AP.method,
             tol_gmres=self.AP.tol_gmres,
             atol_gmres=self.AP.atol_gmres,
+            max_N=self.AP.qdyson_max_N,
         )
-        return phi[-1]
+        return phi_t
 
     ### getters ###
     def get_tail(self, type, Q):
