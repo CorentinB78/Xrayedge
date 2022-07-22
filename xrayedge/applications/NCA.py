@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from copy import copy
 import toolbox as tb
 from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
-from ..reservoir import QuantumDot
+from ..reservoir import QPC
 import bisect
 
 # TODO: test energy shifts
@@ -25,9 +25,7 @@ class XrayForNCASolver:
             else AccuracyParameters(1.0)
         )
 
-        self.correlator_solver = CorrelatorSolver(
-            QuantumDot(self.PP), self.PP.V_cap, self.AP
-        )
+        self.correlator_solver = CorrelatorSolver(QPC(self.PP), self.PP.V_cap, self.AP)
 
     def G_grea(self, t_array):
         """
