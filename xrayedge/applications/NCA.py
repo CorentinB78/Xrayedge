@@ -182,9 +182,9 @@ class GFWithTails:
 
         norm_err = np.abs(norm - 1.0j)
         if norm_err > 1e-1:
-            print(f"XXX Norm F_reta_w = {norm}")
+            print(f"XXX Norm F_reta_w = {norm} != 1j")
         elif norm_err > 1e-2:
-            print(f"/!\ Norm F_reta_w = {norm}")
+            print(f"/!\ Norm F_reta_w = {norm} != 1j")
 
     def _call(self, omega):
         omega -= self._en_shift
