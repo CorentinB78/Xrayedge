@@ -195,7 +195,7 @@ class GFWithTails:
 
         if omega < self._imag_bounds[0]:
             f_imag = self._neg_imag_tail(omega)
-        elif omega <= self._real_bounds[1]:
+        elif omega <= self._imag_bounds[1]:
             f_imag = self._central_interp(omega).imag
         else:
             f_imag = self._pos_imag_tail(omega)
