@@ -205,35 +205,38 @@ class GFWithTails:
     def __call__(self, omega):
         return self._vec_call(omega)
 
-    def plot(self, omegas):
+    def plot(self, omegas, real_part=False, inverse=False):
         x = omegas
         f = self(x + self._en_shift)  # unshift first
 
+        x0, f0 = tb.vcut(self._omegas, self._gf_vals, -2 * abs(x[0]), 2 * abs(x[-1]))
+
         # real part
+        if real_part:
 
-        plt.plot(x, f.real, "--")
-        plt.plot(self._omegas, self._gf_vals.real)
+            plt.plot(x, f.real, "--")
+            plt.plot(x0, f0.real)
 
-        plt.loglog()
-        tb.autoscale_y(logscale=True)
+            plt.loglog()
+            tb.autoscale_y(logscale=True)
 
-        plt.axvline(self._real_bounds[1], c="k", ls=":", alpha=0.4)
-        plt.show()
+            plt.axvline(self._real_bounds[1], c="k", ls=":", alpha=0.4)
+            plt.show()
 
-        plt.plot(-x, -f.real, "--")
-        plt.plot(-self._omegas, -self._gf_vals.real)
+            plt.plot(-x, -f.real, "--")
+            plt.plot(-x0, -f0.real)
 
-        plt.loglog()
-        tb.autoscale_y(logscale=True)
+            plt.loglog()
+            tb.autoscale_y(logscale=True)
 
-        plt.axvline(-self._real_bounds[0], c="k", ls=":", alpha=0.4)
-        plt.show()
+            plt.axvline(-self._real_bounds[0], c="k", ls=":", alpha=0.4)
+            plt.show()
 
         # imag part
-        plt.plot(self._omegas, -self._gf_vals.imag)
-        plt.xlim(*plt.xlim())  # freeze xlim
+        plt.plot(x0, -f0.imag)
+        # plt.xlim(*plt.xlim())  # freeze xlim
         plt.semilogy()
-        tb.autoscale_y(logscale=True)
+        # tb.autoscale_y(logscale=True)
 
         plt.plot(x, -f.imag, "--")
 
@@ -244,13 +247,14 @@ class GFWithTails:
         plt.show()
 
         ### plot inverse
+        if inverse:
 
-        plt.plot(self._omegas, np.imag(1.0 / self._gf_vals))
+            plt.plot(x0, np.imag(1.0 / f0))
 
-        plt.xlim(*plt.xlim())  # freeze xlim
-        plt.semilogy()
-        tb.autoscale_y(logscale=True)
+            # plt.xlim(*plt.xlim())  # freeze xlim
+            plt.semilogy()
+            # tb.autoscale_y(logscale=True)
 
-        plt.plot(x, np.imag(1.0 / f), "--")
+            plt.plot(x, np.imag(1.0 / f), "--")
 
-        plt.show()
+            plt.show()
