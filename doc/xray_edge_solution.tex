@@ -9,7 +9,7 @@
 \usepackage[colorlinks=true,allcolors=blue]{hyperref}
 \usepackage[title,toc]{appendix}
 \usepackage[style=phys,eprint=true]{biblatex}
-\usepackage[smaller,nolist]{acronym}
+\usepackage[nolist]{acronym}
 
 \addbibresource{/home/corentin/Work/biblio-jabref/all-references.bib}
 
@@ -39,6 +39,7 @@
 \begin{acronym}
 	\acro{GF}{Green Function}
 	\acro{QQMC}{Quantum Quasi-Monte Carlo}
+	\acro{QD}{Quantum Dot}
 \end{acronym}
 
 \section{References}
@@ -51,17 +52,27 @@ Non equilibrium version: \cite{Aleiner1997}
 
 \TODO{Generalize to larger impurities}
 
-Hamiltonian:
+The X-ray edge problem is described by this Hamiltonian:
+\begin{equation}
+	H = H_c + H_d + V N_c \, \sum_{\sigma} d_\sigma^\dagger d_\sigma
+\end{equation}
+where
 \begin{align}
-	H_V ={}& H_c + H_d + V c^\dagger c \, d_\sigma^\dagger d_\sigma
+	H_c ={}& \sum_n \qty( \varepsilon_n c_n^\dagger c_n + \gamma_n c_n^\dagger c_{n+1} + \text{h.c.})
 	\\
-	H_c ={}& \sum_k \qty( \varepsilon_k c_k^\dagger c_k + \gamma_k c_k^\dagger c + \gamma_k c^\dagger c_k)
+	H_d ={}& E_d \sum_{\sigma} d_\sigma^\dagger d_\sigma + U d_\up^\dag d_\up^\nodag d_\dn^\dag d_\dn^\nodag
 	\\
-	H_d ={}& E_d d_\sigma^\dagger d_\sigma + U d_\up^\dag d_\up^\nodag d_\dn^\dag d_\dn^\nodag
-	\\
-	H_Q ={}& H_c + QV c^\dag c
+	N_c ={}& \sum_n v_n c_n^\dag c_n
 \end{align}
-where all are fermions. We use a Keldysh formalism where $V$ is turned on at $t=0$ and the initial state is described by the density matrix
+$H_c$ is the Hamiltonian of an non-interacting system, typically a fermionic reservoir, which we represent as a 1D chain here. $H_d$ is the Hamiltonian of an isolated fermionic single orbital system, with Coulomb repulsion, which we will call \ac{QD}. These two systems are capacitively coupled through the last term. $N_c$ is the charge distribution of the reservoir that participates to the capacitive coupling.
+
+As the quantum dot is isolated, its occupation is conserved. The X-ray edge problem can therefore be solved by dividing between its different occupation states. Hence we introduce the effective reservoir Hamiltonian for a quantum dot occupation $Q$:
+\begin{equation}
+	H_Q = H_c + V N_c Q
+\end{equation}
+
+
+We use a Keldysh formalism where $V$ is turned on at $t=0$ and the initial state is described by the density matrix
 \begin{equation}
 	\rho = \rho_c \; \rho_d
 \end{equation}
@@ -69,9 +80,7 @@ with $\rho_c$ a non-equilibrium state of $H_c$ with partition function $Z_c$, an
 
 We want the Green functions for $d_\sigma$ and for $c$.
 
-We will call QPC the $c$ subsystem and QD the $d$ subsystem.
-
-\subsection{Green function for $d_\sigma$}
+\section{Green function for the \acf{QD}}
 
 In the following we drop the spin index when irrelevant.
 
@@ -85,9 +94,9 @@ Let's work out the lesser \ac{GF}:
 \end{align}
 Here, we went in interaction picture, with the time evolution operator
 \begin{gather}
-	U(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V c^\dagger(u) c(u) d_\sigma^\dagger d_\sigma} + \theta(-t) [\text{adjoint}]
+	U(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V N_c(u) d_\sigma^\dagger d_\sigma} + \theta(-t) [\text{adjoint}]
 \end{gather}
-We then expressed the trace over $d$ as a sum over its four states $\ket{Q_\up, Q_\dn}$, $Q_\sigma=0, 1$, and we used $d_\up(t) = e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up$.
+with $Nc(u)$ in the interaction picture. We then expressed the trace over $d$ as a sum over its four states $\ket{Q_\up, Q_\dn}$, $Q_\sigma=0, 1$, and we used $d_\up(t) = e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up$.
 We introduced the probability $P(Q_\up, Q_\dn)$ to find the quantum dot in the state  $\ket{Q_\up, Q_\dn}$
 \begin{equation}
 	P(Q_\up, Q_\dn) = \frac{1}{Z_d} e^{-\beta[(E_d - \mu) (Q_\up + Q_\dn) + Q_\up Q_\dn U]}
@@ -99,7 +108,7 @@ To continue we need to note that:
 \end{equation}
 with
 \begin{equation}
-	\tilde U_Q(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V Q c^\dagger(u) c(u)} + \theta(-t) [\text{adjoint}]
+	\tilde U_Q(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V N_c(u) Q} + \theta(-t) [\text{adjoint}]
 \end{equation}
 and that $d_\up \ket{Q_\up,Q_\dn} = \delta_{Q_\up=1} \ket{0, Q_\dn}$.
 Finally:
@@ -145,7 +154,10 @@ In the steady state, we send the start of the contour to $-\infty$ and choose $t
 
 \subsubsection{Diagrammatic expression}
 
-For $t \ge 0$, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (lying on the time range $[0, t]$ and contributing $W=\pm V$) linked with $g^T(u, u') = -i\expval{T \tilde c^\dag(u'^+) \tilde c(u)}_{H_Q}$, i.e. the time ordered Green functions solution of the QPC with Hamiltonian $H_Q$. Each diagram is multiplied by $(-1)^{l}$ with $l$ the number of loops.
+We focus on the case where the \ac{QD} is coupled to a single site in the reservoir, i.e. $v_n = \delta_{n,0}$.
+\TODO{Extend to general case}
+
+For $t \ge 0$, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (lying on the time range $[0, t]$ and contributing $W=\pm V$) linked with $g^T(u, u') = -i\expval{T \tilde c_0^\dag(u'^+) \tilde c_0(u)}_{H_Q}$, i.e. the time ordered Green functions solution of the reservoir with Hamiltonian $H_Q$. Each diagram is multiplied by $(-1)^{l}$ with $l$ the number of loops.
 
 In the following we assume $t \ge 0$.
 The linked-cluster theorem asserts that
@@ -218,9 +230,50 @@ which can be seen as a linear algebra problem $M f = b$, using the shortcuts
 \end{align}
 
 
-\subsection{Green function in the middle of the QPC}
+\section{Green function in the reservoir}
 
-Let's focus on the QPC alone, which we describe as a single site with onsite energy $\varepsilon$, coupled to two leads (left and right) with hopping energy $\gamma$. The leads are assumed featureless, i.e. flat density of state and infinite bandwidth, of the same temperature $1/\beta$, but with different chemical potentials $\mu_L$ and $\mu_R$.
+\TODO{update with two spins}
+\TODO{Update with generalized coupling}
+
+We follow the same steps:
+\begin{align}
+	-i G^<_c(t, t') ={}& \expval{\tilde c^\dagger(t') \tilde c(t)}
+	\\
+	={}& \frac{1}{Z_0} \Tr_c \sum_{Q=0,1} \qty[e^{-\beta H_c} e^{-\beta E_0 Q} \tilde U_Q^\dagger(t') c^\dagger(t') \tilde U_Q(t') \tilde U_Q^\dagger(t) c(t) \tilde U_Q(t)]
+	\\
+	={}& -i \frac{1}{Z_b} \qty(g^<_c(t, t') + e^{-\beta E_0} \tilde G^<_c(t, t'))
+\end{align}
+And:
+\begin{equation}
+	-i G^>_c(t, t') = -i \frac{1}{Z_b} \qty(g^>_c(t, t') + e^{-\beta E_0} \tilde G^>_c(t, t'))
+\end{equation}
+$g_c$ are the \ac{GF} of the unperturbed problem $H_c + H_d$, while $\tilde G_c$ are the \ac{GF} of the effective problem for $Q=1$.
+
+
+
+%\begin{figure}[t]
+%    \centering
+%    \includegraphics[width=8cm]{my_figure.pdf}
+%    \caption{
+%        \label{fig:the_figure}
+%    }
+%\end{figure}
+
+%\begin{tabular}[t]{c|c}
+%    $i$ & $n_i$ \\
+%    \hline
+%    0 & text \\
+%    1 & other text
+%\end{tabular}
+
+
+%%%%%%%%%%%%%%%
+%\noappendicestocpagenum
+\begin{appendices}
+
+\section{Green function of the disconnected reservoir: case of a quantum dot}
+
+Here we describe the reservoir as a single site with onsite energy $\varepsilon$, coupled to two leads (left and right) with hopping energy $\gamma$. The leads are assumed featureless, i.e. flat density of state and infinite bandwidth, of the same temperature $1/\beta$, but with different chemical potentials $\mu_L$ and $\mu_R$. This describes a quantum dot.
 
 We want the Green function $g$ of the central site.
 
@@ -299,55 +352,7 @@ The time ordered Green function is then (not forgetting that equal time default 
 %	g^{</>}_Q(\omega) = g^{</>}(\omega) + V / \Gamma^2
 %\end{equation}
 
-\subsection{Green function for $c$}
-
-\TODO{update with two spins}
-
-We follow the same steps:
-\begin{align}
-	-i G^<_c(t, t') ={}& \expval{\tilde c^\dagger(t') \tilde c(t)}
-	\\
-	={}& \frac{1}{Z_0} \Tr_c \sum_{Q=0,1} \qty[e^{-\beta H_c} e^{-\beta E_0 Q} \tilde U_Q^\dagger(t') c^\dagger(t') \tilde U_Q(t') \tilde U_Q^\dagger(t) c(t) \tilde U_Q(t)]
-	\\
-	={}& -i \frac{1}{Z_b} \qty(g^<_c(t, t') + e^{-\beta E_0} \tilde G^<_c(t, t'))
-\end{align}
-And:
-\begin{equation}
-	-i G^>_c(t, t') = -i \frac{1}{Z_b} \qty(g^>_c(t, t') + e^{-\beta E_0} \tilde G^>_c(t, t'))
-\end{equation}
-$g_c$ are the \ac{GF} of the unperturbed problem $H_c + H_d$, while $\tilde G_c$ are the \ac{GF} of the effective problem for $Q=1$.
-
-\section{The effective problem for $Q=1$}
-
-This is the problem of which $\tilde G_c$ are solutions. Its Hamiltonian is
-\begin{align}
-	\tilde H = H_c + V c^\dagger c
-\end{align}
-and as for the initial problem, the potential $V$ is switched on at $t=0$, while the initial state is the equilibrium state of $H_c$ alone.
-
-%\begin{figure}[t]
-%    \centering
-%    \includegraphics[width=8cm]{my_figure.pdf}
-%    \caption{
-%        \label{fig:the_figure}
-%    }
-%\end{figure}
-
-%\begin{tabular}[t]{c|c}
-%    $i$ & $n_i$ \\
-%    \hline
-%    0 & text \\
-%    1 & other text
-%\end{tabular}
-
-
-%%%%%%%%%%%%%%%
-%\noappendicestocpagenum
-%\begin{appendices}
-%
-%\section{An appendix}
-%
-%\end{appendices}
+\end{appendices}
 
 %\bibliography{yourbiblio.bib}
 %\bibliographystyle{ieeetr}
