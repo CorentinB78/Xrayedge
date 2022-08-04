@@ -62,7 +62,7 @@ where
 	\\
 	H_d ={}& E_d \sum_{\sigma} d_\sigma^\dagger d_\sigma + U d_\up^\dag d_\up^\nodag d_\dn^\dag d_\dn^\nodag
 	\\
-	N_c ={}& \sum_n v_n c_n^\dag c_n
+	N_c ={}& \sum_{n \in \mathcal{S}} v_n c_n^\dag c_n
 \end{align}
 $H_c$ is the Hamiltonian of an non-interacting system, typically a fermionic reservoir, which we represent as a 1D chain here. $H_d$ is the Hamiltonian of an isolated fermionic single orbital system, with Coulomb repulsion, which we will call \ac{QD}. These two systems are capacitively coupled through the last term. $N_c$ is the charge distribution of the reservoir that participates to the capacitive coupling.
 
@@ -154,24 +154,25 @@ In the steady state, we send the start of the contour to $-\infty$ and choose $t
 
 \subsubsection{Diagrammatic expression}
 
-We focus on the case where the \ac{QD} is coupled to a single site in the reservoir, i.e. $v_n = \delta_{n,0}$.
-\TODO{Extend to general case}
-
-For $t \ge 0$, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (lying on the time range $[0, t]$ and contributing $W=\pm V$) linked with $g^T(u, u') = -i\expval{T \tilde c_0^\dag(u'^+) \tilde c_0(u)}_{H_Q}$, i.e. the time ordered Green functions solution of the reservoir with Hamiltonian $H_Q$. Each diagram is multiplied by $(-1)^{l}$ with $l$ the number of loops.
-
 In the following we assume $t \ge 0$.
+According to Wick theorem, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (labeled by a time within $[0, t]$, a site index $j \in \mathcal{S}$, and contributing $W v_j$ with $W=\pm V$) linked with $g^T(u, j; u', j') = -i\expval{T \tilde c_{j'}^\dag(u'^+) \tilde c_j(u)}_{H_Q}$, i.e. the time ordered Green functions solution of the reservoir with Hamiltonian $H_Q$. Each diagram is multiplied by $(-1)^{l}$ with $l$ the number of loops.
+
 The linked-cluster theorem asserts that
 \begin{equation}
 	A^{\pm}_Q(t) = \exp(C(t))
 \end{equation}
-with $C(t)$ the sum of connected diagrams only. They can only be made of a single loop, so we can write explicitly
+with $C(t)$ the sum of connected diagrams only (we omit $\pm$ and the dependence in $Q$ for simplicity). They can only be made of a single loop, so we can write explicitly
 \begin{equation}
-	C(t) = - \sum_{n \ge 1} \frac{W^n}{n} \int_0^t \dd{u_1} \ldots \dd{u_n} g^T(u_1, u_2) \ldots g^T(u_n, u_1)
+	C(t) = - \sum_{n \ge 1} \frac{W^n}{n} \int \dd{1} \ldots \dd{n} g^T(1; 2) \ldots g^T(n; 1)
 \end{equation}
-where the $1/n$ factor stems for the choice of labeling.
-Here it is useful to introduce the sum of all chain diagrams, or equivalently all connected diagrams with two external legs, denoted $\varphi_t(u, u')$ and with the following explicit expression\footnote{$\varphi_t$ is in fact the dressed time ordered Green function with a perturbation acting only between times $0$ and $t$.}:
+where we used the following notation shortcut:
 \begin{equation}
-	\varphi_t(u, u') = g^T(u, u') + \sum_{n \ge 1} W^n \int_0^t \dd{u_1} \ldots \dd{u_n} g^T(u, u_1) \ldots g^T(u_n, u')
+	\int \dd{1} \rightarrow \sum_{j_1} v_{j_1} \int_0^t \dd{u_1}
+\end{equation}
+The $1/n$ factor stems for the choice of labeling.
+Here it is useful to introduce the sum of all chain diagrams, or equivalently all connected diagrams with two external legs, with the following explicit expression\footnote{$\varphi_t$ is in fact the dressed time ordered Green function with a perturbation acting only between times $0$ and $t$.}:
+\begin{equation}
+	\varphi_t(u, j; u', j') = g^T(u, j; u', j') + \sum_{n \ge 1} W^n \int \dd{1} \ldots \dd{n} g^T(u, j; 1) g^T(1; 2) \ldots g^T(n; u', j')
 \end{equation}
 
 To relate $C$ and $\varphi$, we need to eliminate the previously mentioned factor $1/n$. 
@@ -179,27 +180,38 @@ This is done by taking the time derivative of $C$, which acts as fixing any of t
 \footnote{
 Another possibility is to consider $W \pdv{C}{W}$ (keeping $g^T$ fixed), which has each diagram multiplied by its number of vertices. Then we see easily that
 \begin{equation}
-	W \pdv{C}{V} = W \int_0^t \dd{u} \varphi_t(u, u)
+	W \pdv{C}{V} = W \int_0^t \dd{u} \sum_{j \in \mathcal{S}} v_j \; \varphi_t(u, j; u, j)
 \end{equation}
 }
 \begin{equation}
-	\dv{C}{t} = -W \varphi_t(t, t)
+	\dv{C}{t} = -W \sum_{j \in \mathcal{S}} v_j \; \varphi_t(t, j; t, j)
 \end{equation}
-remembering that equal time default ordering gives $\varphi_t(t, t) = \varphi_t(t, t^+)$.
+remembering that equal time default ordering gives $\varphi_t(t, j; t, j) = \varphi_t(t, j; t^+, j)$.
 
 Finally we need to obtain $\varphi$. 
-$\varphi$ follows a (quasi) Dyson equation:
+$\varphi$ follows a (quasi\footnote{because vertices are limited to the time range $[0, t]$}) Dyson equation:
 \begin{equation}
-	\varphi_t(u, u') = g^T(u, u') + W \int_0^t \dd{v} g^T(u, v) \varphi_t(v, u')
+	\varphi_t(u, j; u', j') = g^T(u, j; u', j') + W \int \dd{1} g^T(u, j; 1) \varphi_t(1; u', j')
 \end{equation}
-but we will only use the special case $u' = t$. Restricting to $0 \le u \le t$, this leads to this equation to solve:
+which is enough to describe entirely $\varphi_t(\star; u', j')$ at fixed values of $u'$ and $j'$. As we only need the special case $u' = t$, this leads to $\# \mathcal{S}$ independent equations, parametrized by $n \in \mathcal{S}$:
 \begin{equation}
 	\label{eq:quasi_Dyson}
-	\varphi_t(u, t) = g^<(u - t) + W \int_0^u \dd{v} g^>(u - v) \varphi_t(v, t) + W \int_u^t \dd{v} g^<(u - v) \varphi_t(v, t)
+	\varphi_t(u, j; t, n) = g_{jn}^<(u - t) + W \sum_{k \in \mathcal{S}} v_k \qty[ \int_0^u \dd{v} g_{jk}^>(u - v) \varphi_t(v, k; t, n) + \int_u^t \dd{v} g_{jk}^<(u - v) \varphi_t(v, k; t, n) ]
 \end{equation}
-where we split $g^T$ into its greater and lesser components to make explicit the jump between the two, and used the fact we are in the steady-state.
+where $0 \le u \le t$ and $j \in \mathcal{S}$.
+We did split $g^T$ into its greater and lesser components to make explicit the jump between the two, and used the fact we are in the steady-state.
+
+In the special case where the capacitive coupling acts on a single site of the reservoir, e.g. $v_n = \delta_{n0}$, this simplifies into a single equation where all site indices can be dropped:
+\begin{equation}
+	\label{eq:quasi_Dyson_single_site}
+	\varphi_t(u; t) = g^<(u - t) + W \int_0^u \dd{v} g^>(u - v) \varphi_t(v; t) + W \int_u^t \dd{v} g^<(u - v) \varphi_t(v; t)
+\end{equation}
+
 
 \subsubsection{Numerical solution}
+
+We focus on the case where the \ac{QD} is coupled to a single site in the reservoir, i.e. $v_n = \delta_{n,0}$.
+\TODO{Extend to general case}
 
 We solve Eq.~\eqref{eq:quasi_Dyson} for each separate $t$ by using a representation of functions $[0, t] \rightarrow \mathbb{C}$ by their values on a grid $\{u_1, \ldots, u_N\}$. Each $u_i$ is associated to a basis function $\phi_i$ such that $\phi_i(u_j) = \delta_{ij}$. We represent $g^<$, $g^>$ and $f:u \rightarrow f(u) = \varphi_t(u, t)$ with this choice of grid and basis functions:
 \begin{gather}
