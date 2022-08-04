@@ -4,6 +4,7 @@ from numpy import testing
 from xrayedge import PhysicsParameters
 from xrayedge import reservoir
 import toolbox as tb
+import matplotlib.pyplot as plt
 
 
 class TestQuantumDotFrequencyDomain(unittest.TestCase):
@@ -124,6 +125,25 @@ class TestQPCFrequencyDomainEta(unittest.TestCase):
 
         testing.assert_allclose(gf_0, gf_1, atol=1e-4)
         testing.assert_allclose(gf_0, gf_2, atol=1e-4)
+
+
+class TestOneDChain(unittest.TestCase):
+    def test_run(self):
+        PP = PhysicsParameters()
+        PP.D_res = 2.0
+        PP.eps_res = 0.0
+        PP.mu_res = 0.5
+        PP.bias_res = 0.3
+        PP.beta = 2.0
+
+        chain = reservoir.OneDChain(PP, 10.0, 100)
+
+        times, gf = chain.g_grea_t(0, 0)
+        # tb.cpx_plot(times, gf)
+        # plt.show()
+        times, gf = chain.g_less_t(0, -2)
+        # tb.cpx_plot(times, gf)
+        # plt.show()
 
 
 if __name__ == "__main__":
