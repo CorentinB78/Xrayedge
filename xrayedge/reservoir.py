@@ -13,7 +13,7 @@ class Reservoir:
     def __init__(self):
         pass
 
-    def g_less_t(self, Q):
+    def g_less_t(self, Q, orb_a=0, orb_b=0):
         """
         Lesser GF in times of contact site.
 
@@ -21,7 +21,7 @@ class Reservoir:
         """
         raise NotImplementedError
 
-    def g_grea_t(self, Q):
+    def g_grea_t(self, Q, orb_a=0, orb_b=0):
         """
         Greater GF in times of contact site.
 
@@ -30,23 +30,23 @@ class Reservoir:
         raise NotImplementedError
 
     @lru_cache
-    def g_less_t_fun(self, Q):
+    def g_less_t_fun(self, Q, orb_a=0, orb_b=0):
         """
         Lesser GF in times of QPC's central site.
 
         Returns a (cached) function
         """
-        times, g_less_t = self.g_less_t(Q)
+        times, g_less_t = self.g_less_t(Q, orb_a=orb_a, orb_b=orb_b)
         return interpolate.CubicSpline(times, g_less_t, extrapolate=False)
 
     @lru_cache
-    def g_grea_t_fun(self, Q):
+    def g_grea_t_fun(self, Q, orb_a=0, orb_b=0):
         """
         Greater GF in times of QPC's central site.
 
         Returns a (cached) function
         """
-        times, g_grea_t = self.g_grea_t(Q)
+        times, g_grea_t = self.g_grea_t(Q, orb_a=orb_a, orb_b=orb_b)
         return interpolate.CubicSpline(times, g_grea_t, extrapolate=False)
 
 
@@ -143,20 +143,28 @@ class TwoLeadsReservoir(Reservoir):
             + 1.0j * np.imag(self.delta_leads_R(w_array))
         )
 
-    def g_less_t(self, Q):
+    def g_less_t(self, Q, orb_a=0, orb_b=0):
         """
         Lesser GF in times of contact site.
         """
+        if orb_a != 0 or orb_b != 0:
+            raise ValueError(
+                "A TwoLeadsReservoir can be evaluated only at the central site (orbital=0)"
+            )
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
         g_less = self.g_less(w, Q=Q)
 
         times, g_less_t = tb.inv_fourier_transform(w, g_less)
         return times, g_less_t
 
-    def g_grea_t(self, Q):
+    def g_grea_t(self, Q, orb_a=0, orb_b=0):
         """
         Greater GF in times of contact site.
         """
+        if orb_a != 0 or orb_b != 0:
+            raise ValueError(
+                "A TwoLeadsReservoir can be evaluated only at the central site (orbital=0)"
+            )
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
         g_grea = self.g_grea(w, Q=Q)
 
