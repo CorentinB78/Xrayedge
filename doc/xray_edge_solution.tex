@@ -210,6 +210,59 @@ In the special case where the capacitive coupling acts on a single site of the r
 
 \subsubsection{Numerical solution}
 
+\paragraph{Piece-wise Linear Approximation (``trapz" in the code)}
+
+We want to solve Eq.~\eqref{eq:quasi_Dyson} at fixed $n$. We start by renaming $\varphi_t(u, j; t, n) \rightarrow f(u, j)$.
+We approximate $f$, $g^<$ and $g^>$ by piece-wise linear functions, defined by their values on a regular time grid $u_i = i \dd{t}$ with $t = N \dd{t}$ and $N$ the number of intervals.
+
+By evaluating Eq.~\eqref{eq:quasi_Dyson} at each $u=u_i$, the two time integrals can be cut according to the same grid:
+\begin{equation}
+	f(u_i, j) = g_{jn}^<(u_i - t) + W \sum_{k \in \mathcal{S}} v_k \qty[ \sum_{r=0}^{i-1}\int_{u_r}^{u_{r+1}} \dd{v} g_{jk}^>(u_i - v) f(v, k) + \sum_{r=i}^{N-1} \int_{u_r}^{u_{r+1}} \dd{v} g_{jk}^<(u_i - v) f(v, k) ]
+\end{equation}
+The integrals are (ignoring irrelevant space indices):
+\begin{equation}
+	\int_{u_r}^{u_{r+1}} \dd{v} g(u_i - v) f(v) =
+	\frac{\dd{t}}{3} \qty(g_{i - r - 1} f_{r+1} + g_{i-r} f_r) +
+	\frac{\dd{t}}{6} \qty(g_{i-r-1} f_r + g_{i-r} f_{r+1})
+\end{equation}
+
+In the case where the \ac{QD} is coupled to a single site in the reservoir, we can ignore all space indices and obtain
+
+\begin{equation}
+	\begin{split}
+	f_i = g_{i - N}^< + \frac{\dd{t}}{6} W \left[
+	 \sum_{r=0}^{i-1} \qty(g^>_{i-r-1} + 4 g^>_{i - r} + g^>_{i-r + 1}) f_{r} +
+	 \sum_{r=i+1}^{N} \qty(g^<_{i-r-1} + 4 g^<_{i - r} + g^<_{i-r+1}) f_{r} \;\; + \right.
+	 \\
+	 \left. \qty(g^<_{-1} + 2 g^<_{0} + 2 g^>_{0} + g^>_{1}) f_{i}
+	 - \qty(2 g^>_{i} + g^>_{i + 1}) f_{0}
+	 - \qty(g^<_{i-N-1} + 2 g^<_{i-N}) f_N
+	 \vphantom{\sum_{i=0}^N}\right]
+	 \end{split}
+\end{equation}
+We see a linear problem with a matrix that is almost Toeplitz, up to the two last terms. This can be solved efficiently with the GMRES algorithm and using the quasi Toeplitz nature of the problem to speedup matrix--vector product with FFT.
+
+In the general case, if we want space indices to also have this advantageous Toeplitz structure, we need to assume that the isolated reservoir with Hamiltonian $H_Q$ is invariant by translation in space.
+Then, $g_{jk}(u) = g_{j - k}(u)$.
+
+We introduce (yet) another notation: $f_{i; j} = f(u_i, j)$ and similarly for $g^{</>}$.
+Then we have:
+\begin{equation}
+	\begin{split}
+		f_{i;j} = g_{i - N;j-n}^< + \frac{\dd{t}}{6} W \sum_{k \in \mathcal{S}} v_k \left[
+		\sum_{r=0}^{i-1} \qty(g^>_{i-r-1; j-k} + 4 g^>_{i - r; j-k} + g^>_{i-r + 1; j-k}) f_{r;k} \;\; + \right.
+		\\
+		\sum_{r=i+1}^{N} \qty(g^<_{i-r-1;j-k} + 4 g^<_{i - r;j-k} + g^<_{i-r+1;j-k}) f_{r;k} \;\; +
+		\\
+		\left. \qty(g^<_{-1;j-k} + 2 g^<_{0;j-k} + 2 g^>_{0;j-k} + g^>_{1;j-k}) f_{i;k}
+		- \qty(2 g^>_{i;j-k} + g^>_{i + 1;j-k}) f_{0;k}
+		- \qty(g^<_{i-N-1;j-k} + 2 g^<_{i-N;j-k}) f_{N;k}
+		\vphantom{\sum_{i=0}^N}\right]
+	\end{split}
+\end{equation}
+
+\paragraph{General scheme}
+
 We focus on the case where the \ac{QD} is coupled to a single site in the reservoir, i.e. $v_n = \delta_{n,0}$.
 \TODO{Extend to general case}
 
