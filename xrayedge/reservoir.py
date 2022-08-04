@@ -2,6 +2,7 @@ import toolbox as tb
 import numpy as np
 from scipy import interpolate, integrate
 from copy import copy
+from functools import lru_cache
 
 
 class Reservoir:
@@ -10,10 +11,7 @@ class Reservoir:
     """
 
     def __init__(self):
-        self.N = 3  # nr of different charge states affecting the QPC
-
-        self._cache_g_less_t = [None] * self.N
-        self._cache_g_grea_t = [None] * self.N
+        pass
 
     def g_less_t(self, Q):
         """
@@ -31,33 +29,25 @@ class Reservoir:
         """
         raise NotImplementedError
 
+    @lru_cache
     def g_less_t_fun(self, Q):
         """
         Lesser GF in times of QPC's central site.
 
         Returns a (cached) function
         """
-        if self._cache_g_less_t[Q] is None:
-            times, g_less_t = self.g_less_t(Q)
-            self._cache_g_less_t[Q] = interpolate.CubicSpline(
-                times, g_less_t, extrapolate=False
-            )
+        times, g_less_t = self.g_less_t(Q)
+        return interpolate.CubicSpline(times, g_less_t, extrapolate=False)
 
-        return self._cache_g_less_t[Q]
-
+    @lru_cache
     def g_grea_t_fun(self, Q):
         """
         Greater GF in times of QPC's central site.
 
         Returns a (cached) function
         """
-        if self._cache_g_grea_t[Q] is None:
-            times, g_grea_t = self.g_grea_t(Q)
-            self._cache_g_grea_t[Q] = interpolate.CubicSpline(
-                times, g_grea_t, extrapolate=False
-            )
-
-        return self._cache_g_grea_t[Q]
+        times, g_grea_t = self.g_grea_t(Q)
+        return interpolate.CubicSpline(times, g_grea_t, extrapolate=False)
 
 
 class TwoLeadsReservoir(Reservoir):
