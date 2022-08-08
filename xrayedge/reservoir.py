@@ -30,24 +30,34 @@ class Reservoir:
         raise NotImplementedError
 
     @lru_cache
-    def g_less_t_fun(self, Q, orb_a=0, orb_b=0):
+    def g_less_t_fun(self, Q):
         """
         Lesser GF in times of QPC's central site.
 
         Returns a (cached) function
         """
-        times, g_less_t = self.g_less_t(Q, orb_a=orb_a, orb_b=orb_b)
-        return interpolate.CubicSpline(times, g_less_t, extrapolate=False)
+
+        @lru_cache
+        def func(orb_a, orb_b):
+            times, g_less_t = self.g_less_t(Q, orb_a=orb_a, orb_b=orb_b)
+            return interpolate.CubicSpline(times, g_less_t, extrapolate=False)
+
+        return func
 
     @lru_cache
-    def g_grea_t_fun(self, Q, orb_a=0, orb_b=0):
+    def g_grea_t_fun(self, Q):
         """
         Greater GF in times of QPC's central site.
 
         Returns a (cached) function
         """
-        times, g_grea_t = self.g_grea_t(Q, orb_a=orb_a, orb_b=orb_b)
-        return interpolate.CubicSpline(times, g_grea_t, extrapolate=False)
+
+        @lru_cache
+        def func(orb_a, orb_b):
+            times, g_grea_t = self.g_grea_t(Q, orb_a=orb_a, orb_b=orb_b)
+            return interpolate.CubicSpline(times, g_grea_t, extrapolate=False)
+
+        return func
 
 
 class TwoLeadsReservoir(Reservoir):

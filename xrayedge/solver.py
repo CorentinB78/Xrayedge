@@ -251,7 +251,7 @@ class CorrelatorSolver:
         """
         assert t >= 0.0
         if np.abs(t) < 1e-10:
-            return self.reservoir.g_less_t_fun(Q)(0.0)
+            return self.reservoir.g_less_t_fun(Q)(0, 0)(0.0)
 
         if use_cache_N and len(self._times) > 0:
             idx = bisect.bisect(self._times, t)

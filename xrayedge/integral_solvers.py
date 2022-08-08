@@ -151,8 +151,8 @@ def solve_quasi_dyson(
                 f"Lagrange convolution integrals have not been computed for N={N}"
             )
         t_array = cheb_points(N, 0.0, t)
-        gg = g_grea(t_array) * V * t
-        gl = g_less(-t_array) * V * t
+        gg = g_grea(0, 0)(t_array) * V * t
+        gl = g_less(0, 0)(-t_array) * V * t
 
         mat_M = np.empty((N, N), dtype=complex)
         for m in range(N):
@@ -163,13 +163,13 @@ def solve_quasi_dyson(
 
             mat_M[m, m] += 1.0
 
-        vec_b = g_less(t_array - t)
+        vec_b = g_less(0, 0)(t_array - t)
         return t_array, linalg.solve(mat_M, vec_b)
 
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
-        gg = g_grea(t_array) * V * delta / 6.0
-        gl = g_less(-t_array) * V * delta / 6.0
+        gg = g_grea(0, 0)(t_array) * V * delta / 6.0
+        gl = g_less(0, 0)(-t_array) * V * delta / 6.0
 
         r = np.empty(N, dtype=complex)
         c = np.empty(N, dtype=complex)
@@ -186,7 +186,7 @@ def solve_quasi_dyson(
         correc_1 = gl[N - 1 :: -1] * 2.0
         correc_1[1:N] += gl[N - 1 : 0 : -1]
 
-        vec_b = g_less(t_array - t)
+        vec_b = g_less(0, 0)(t_array - t)
 
         c[0] += 1.0
         mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))

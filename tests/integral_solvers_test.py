@@ -160,7 +160,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
 
         def cst_func(c):
-            return np.vectorize(lambda x: c)
+            return lambda a, b: np.vectorize(lambda x: c)
 
         time, phi = solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, V, 10, method="cheb"
@@ -177,7 +177,9 @@ class TestSolvePseudoDyson(unittest.TestCase):
         )
         np.testing.assert_allclose(phi, np.exp(V * (time - t)))
 
-        time, phi = solve_quasi_dyson(np.sin, np.cos, t, V, 50, method="cheb")
+        time, phi = solve_quasi_dyson(
+            lambda a, b: np.sin, lambda a, b: np.cos, t, V, 50, method="cheb"
+        )
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
 
     def test_trapz_auto_refine(self):
@@ -185,8 +187,8 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
 
         phi_t, err, N = solve_quasi_dyson_last_time(
-            np.sin,
-            np.cos,
+            lambda a, b: np.sin,
+            lambda a, b: np.cos,
             t,
             V,
             rtol=1e-3,
@@ -201,7 +203,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
 
         def cst_func(c):
-            return np.vectorize(lambda x: c)
+            return lambda a, b: np.vectorize(lambda x: c)
 
         time, phi = solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, V, 10, method="trapz"
@@ -218,7 +220,9 @@ class TestSolvePseudoDyson(unittest.TestCase):
         )
         np.testing.assert_allclose(phi, np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
 
-        time, phi = solve_quasi_dyson(np.sin, np.cos, t, V, 100, method="trapz")
+        time, phi = solve_quasi_dyson(
+            lambda a, b: np.sin, lambda a, b: np.cos, t, V, 100, method="trapz"
+        )
         np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-3)
 
     def test_second_order_cheb(self):
@@ -227,7 +231,9 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = solve_quasi_dyson(gl, gg, t, V, 50, method="cheb")
+        times, f_vals = solve_quasi_dyson(
+            lambda a, b: gl, lambda a, b: gg, t, V, 50, method="cheb"
+        )
 
         ### perturbation orders in V
         f0 = gl(times - t)
@@ -251,7 +257,9 @@ class TestSolvePseudoDyson(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = solve_quasi_dyson(gl, gg, t, V, 200, method="trapz")
+        times, f_vals = solve_quasi_dyson(
+            lambda a, b: gl, lambda a, b: gg, t, V, 200, method="trapz"
+        )
 
         ### perturbation orders in V
         f0 = gl(times - t)

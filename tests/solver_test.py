@@ -14,7 +14,7 @@ class TestCorrelatorSolver(unittest.TestCase):
 
         times = np.linspace(0.0, 10.0, 4)
         phi = np.array([solver.phi(0, Q, t) for t in times])
-        g_less = solver.reservoir.g_less_t_fun(Q)(times)
+        g_less = solver.reservoir.g_less_t_fun(Q)(0, 0)(times)
 
         idx = np.argmin(np.abs(times))
         assert times[idx] == 0.0
