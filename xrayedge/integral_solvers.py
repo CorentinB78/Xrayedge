@@ -168,23 +168,23 @@ def solve_quasi_dyson(
 
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
-        gg = g_grea(t_array) * V * delta
-        gl = g_less(-t_array) * V * delta
+        gg = g_grea(t_array) * V * delta / 6.0
+        gl = g_less(-t_array) * V * delta / 6.0
 
         r = np.empty(N, dtype=complex)
         c = np.empty(N, dtype=complex)
-        r[1:N] = gl[1:N] * 2.0 / 3.0 + gl[0 : N - 1] / 6.0
-        r[1 : N - 1] += gl[2:N] / 6.0
-        c[1:N] = gg[1:N] * 2.0 / 3.0 + gg[0 : N - 1] / 6.0
-        c[1 : N - 1] += gg[2:N] / 6.0
-        c[0] = (gg[0] + gl[0]) / 3.0 + (gg[1] + gl[1]) / 6.0
+        r[1:N] = gl[1:N] * 4.0 + gl[0 : N - 1]
+        r[1 : N - 1] += gl[2:N]
+        c[1:N] = gg[1:N] * 4.0 + gg[0 : N - 1]
+        c[1 : N - 1] += gg[2:N]
+        c[0] = (gg[0] + gl[0]) * 2.0 + (gg[1] + gl[1])
 
         # boundary corrections
-        correc_0 = gg[0:N] / 3.0
-        correc_0[0 : N - 1] += gg[1:N] / 6.0
+        correc_0 = gg[0:N] * 2.0
+        correc_0[0 : N - 1] += gg[1:N]
 
-        correc_1 = gl[N - 1 :: -1] / 3.0
-        correc_1[1:N] += gl[N - 1 : 0 : -1] / 6.0
+        correc_1 = gl[N - 1 :: -1] * 2.0
+        correc_1[1:N] += gl[N - 1 : 0 : -1]
 
         vec_b = g_less(t_array - t)
 
