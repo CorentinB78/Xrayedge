@@ -11,7 +11,7 @@ import cProfile
 
 PP = xray.PhysicsParameters()
 
-tmax = 30.0
+tmax = 10.0
 
 AP = xray.AccuracyParameters(
     time_extrapolate=tmax,
