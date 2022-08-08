@@ -123,9 +123,17 @@ class CorrelatorSolver:
     Data is cached after calculation, so parameters should not be changed.
     """
 
-    def __init__(self, reservoir, capacitive_coupling, accuracy_params):
+    def __init__(self, reservoir, orbitals, capacitive_couplings, accuracy_params):
+        """
+        Arguments:
+            reservoir -- a `Reservoir` instance
+            orbitals -- list of reservoir orbitals where coupling acts
+            capacitive_couplings -- list of corresponding couplings
+            accuracy_params -- an instance of `AccuracyParameters`
+        """
         self.reservoir = reservoir
-        self.V = capacitive_coupling
+        self.orbitals = np.asarray(orbitals)
+        self.capacitive_couplings = np.asarray(capacitive_couplings)
         self.AP = copy(accuracy_params)
 
         self.N = 3  # nr of different charge states affecting the QPC
@@ -229,8 +237,7 @@ class CorrelatorSolver:
             self.AP.time_extrapolate,
             tol=self.AP.tol_C,
         )
-        C_vals *= -sign * self.V
-        err *= np.abs(self.V)
+        C_vals *= -sign
 
         slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
         intercept = C_vals[-1] - slope * times[-1]
@@ -249,35 +256,52 @@ class CorrelatorSolver:
         """
         Computes \phi_t(t, t^+) using the quasi Dyson equation.
         """
+        # TODO: refactor calculation of phi (better N, individual interpolations, manage guesses maybe)
         assert t >= 0.0
+
         if np.abs(t) < 1e-10:
-            return self.reservoir.g_less_t_fun(Q)(0, 0)(0.0)
+            out = 0.0j
+
+            for orb, coupling in zip(self.orbitals, self.capacitive_couplings):
+                out += coupling * self.reservoir.g_less_t_fun(Q)(orb, orb)(0.0)
+
+            return out
 
         if use_cache_N and len(self._times) > 0:
             idx = bisect.bisect(self._times, t)
             if idx != 0:
                 start_N = self._start_N[idx - 1]
 
-        phi_t, err, N = solve_quasi_dyson_last_time(
-            self.reservoir.g_less_t_fun(Q),
-            self.reservoir.g_grea_t_fun(Q),
-            t,
-            -sign * self.V,
-            self.AP.qdyson_rtol,
-            self.AP.qdyson_atol,
-            start_N=start_N,
-            method=self.AP.method,
-            tol_gmres=self.AP.tol_gmres,
-            atol_gmres=self.AP.atol_gmres,
-            max_N=self.AP.qdyson_max_N,
-        )
+        out = 0.0j
+        N_max = 0
+
+        for orb, coupling in zip(self.orbitals, self.capacitive_couplings):
+
+            phi_t, err, N = solve_quasi_dyson_last_time(
+                self.reservoir.g_less_t_fun(Q),
+                self.reservoir.g_grea_t_fun(Q),
+                t,
+                orb,
+                self.orbitals,
+                -sign * self.capacitive_couplings,
+                self.AP.qdyson_rtol,
+                self.AP.qdyson_atol,
+                start_N=start_N,
+                method=self.AP.method,
+                tol_gmres=self.AP.tol_gmres,
+                atol_gmres=self.AP.atol_gmres,
+                max_N=self.AP.qdyson_max_N,
+            )
+            N_max = max(N_max, N)
+
+            out += coupling * phi_t
 
         if cache_N:
             idx = bisect.bisect(self._times, t)
             self._times.insert(idx, t)
-            self._start_N.insert(idx, N // 2)
+            self._start_N.insert(idx, N_max // 2)
 
-        return phi_t
+        return out
 
     ### getters ###
     def get_tail(self, type, Q):

@@ -25,7 +25,9 @@ class XrayForNCASolver:
             else AccuracyParameters(1.0)
         )
 
-        self.correlator_solver = CorrelatorSolver(QPC(self.PP), self.PP.V_cap, self.AP)
+        self.correlator_solver = CorrelatorSolver(
+            QPC(self.PP), [0], [self.PP.V_cap], self.AP
+        )
 
     def G_grea(self, t_array):
         """

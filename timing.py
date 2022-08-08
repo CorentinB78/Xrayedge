@@ -20,7 +20,7 @@ AP = xray.AccuracyParameters(
 )
 
 qpc = xray.QPC(PP)
-solver = xray.CorrelatorSolver(qpc, PP.V_cap, AP)
+solver = xray.CorrelatorSolver(qpc, [0], [PP.V_cap], AP)
 
 start = time.time()
 start_full = time.process_time()

@@ -114,7 +114,16 @@ lagrange_integrals_grea, lagrange_integrals_less = load_lagrange_convol_integral
 
 
 def solve_quasi_dyson(
-    g_less, g_grea, t, V, N, method="trapz", tol_gmres=1e-10, atol_gmres=1e-10
+    g_less,
+    g_grea,
+    t,
+    orb,
+    orbitals,
+    couplings,
+    N,
+    method="trapz",
+    tol_gmres=1e-10,
+    atol_gmres=1e-10,
 ):
     """
     Solve the following equation (for 0 <= u <= t):
@@ -127,6 +136,9 @@ def solve_quasi_dyson(
         g_less -- vectorized callable for g^<
         g_grea -- vectorized callable for g^>
         t -- positive float
+        orb -- int, orbital index
+        orbitals -- 1D array, list of orbital indices
+        couplings -- 1D array, list of corresponding couplings
         V -- real or complex parameter
         N -- number of grid points on which f is computed
 
@@ -138,6 +150,7 @@ def solve_quasi_dyson(
     """
     assert t > 0.0
     assert N > 1
+    assert len(orbitals) == len(couplings)
 
     if method == "trapz":
         if N < 200:
@@ -146,13 +159,20 @@ def solve_quasi_dyson(
             method = "trapz-GMRES"
 
     if method == "cheb":
+        if orbitals != [orb]:
+            raise ValueError(
+                "multi-orbital coupling not implemented with 'cheb' method"
+            )
+
+        V = couplings[0]
+
         if N >= len(lagrange_integrals_grea):
             raise RuntimeError(
                 f"Lagrange convolution integrals have not been computed for N={N}"
             )
         t_array = cheb_points(N, 0.0, t)
-        gg = g_grea(0, 0)(t_array) * V * t
-        gl = g_less(0, 0)(-t_array) * V * t
+        gg = g_grea(orb, orb)(t_array) * V * t
+        gl = g_less(orb, orb)(-t_array) * V * t
 
         mat_M = np.empty((N, N), dtype=complex)
         for m in range(N):
@@ -163,33 +183,44 @@ def solve_quasi_dyson(
 
             mat_M[m, m] += 1.0
 
-        vec_b = g_less(0, 0)(t_array - t)
+        vec_b = g_less(orb, orb)(t_array - t)
         return t_array, linalg.solve(mat_M, vec_b)
 
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
-        gg = g_grea(0, 0)(t_array) * V * delta / 6.0
-        gl = g_less(0, 0)(-t_array) * V * delta / 6.0
+        nr_orb = len(orbitals)
 
-        r = np.empty(N, dtype=complex)
-        c = np.empty(N, dtype=complex)
-        r[1:N] = gl[1:N] * 4.0 + gl[0 : N - 1]
-        r[1 : N - 1] += gl[2:N]
-        c[1:N] = gg[1:N] * 4.0 + gg[0 : N - 1]
-        c[1 : N - 1] += gg[2:N]
-        c[0] = (gg[0] + gl[0]) * 2.0 + (gg[1] + gl[1])
+        blocks = np.empty((nr_orb, nr_orb), dtype=QuasiToeplitzMatrix)
 
-        # boundary corrections
-        correc_0 = gg[0:N] * 2.0
-        correc_0[0 : N - 1] += gg[1:N]
+        for j, orb_a in enumerate(orbitals):
+            for k, orb_b in enumerate(orbitals):
 
-        correc_1 = gl[N - 1 :: -1] * 2.0
-        correc_1[1:N] += gl[N - 1 : 0 : -1]
+                gg = g_grea(orb_a, orb_b)(t_array) * couplings[k] * delta / 6.0
+                gl = g_less(orb_a, orb_b)(-t_array) * couplings[k] * delta / 6.0
 
-        vec_b = g_less(0, 0)(t_array - t)
+                r = np.empty(N, dtype=complex)
+                c = np.empty(N, dtype=complex)
+                r[1:N] = gl[1:N] * 4.0 + gl[0 : N - 1]
+                r[1 : N - 1] += gl[2:N]
+                c[1:N] = gg[1:N] * 4.0 + gg[0 : N - 1]
+                c[1 : N - 1] += gg[2:N]
+                c[0] = (gg[0] + gl[0]) * 2.0 + (gg[1] + gl[1])
 
-        c[0] += 1.0
-        mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
+                # boundary corrections
+                correc_0 = gg[0:N] * 2.0
+                correc_0[0 : N - 1] += gg[1:N]
+
+                correc_1 = gl[N - 1 :: -1] * 2.0
+                correc_1[1:N] += gl[N - 1 : 0 : -1]
+
+                c[0] += 1.0
+                blocks[j, k] = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
+
+        mat_M = BlockLinearOperator(blocks, check_shapes=True)
+
+        vec_b = np.empty(N * nr_orb, dtype=complex)
+        for j, orb_a in enumerate(orbitals):
+            vec_b[j * N : (j + 1) * N] = g_less(j, orb)(t_array - t)
 
         if method == "trapz-LU":
             mat_M = mat_M.to_array()
@@ -211,7 +242,9 @@ def solve_quasi_dyson_last_time(
     g_less,
     g_grea,
     t,
-    V,
+    orb,
+    orbitals,
+    couplings,
     rtol,
     atol,
     start_N=None,
@@ -234,6 +267,9 @@ def solve_quasi_dyson_last_time(
         g_less -- vectorized callable for g^<
         g_grea -- vectorized callable for g^>
         t -- positive float
+        orb -- int, orbital index
+        orbitals -- 1D array, list of orbital indices
+        couplings -- 1D array, list of corresponding couplings
         V -- real or complex parameter
         rtol, atol -- relative and absolute tolerance. Discretization is refined until first one is reached
 
@@ -258,7 +294,9 @@ def solve_quasi_dyson_last_time(
         g_less,
         g_grea,
         t,
-        V,
+        orb,
+        orbitals,
+        couplings,
         N,
         method=method,
         tol_gmres=tol_gmres,
@@ -278,7 +316,9 @@ def solve_quasi_dyson_last_time(
             g_less,
             g_grea,
             t,
-            V,
+            orb,
+            orbitals,
+            couplings,
             N,
             method=method,
             tol_gmres=tol_gmres,
