@@ -33,9 +33,11 @@ class TestCorrelatorSolver(unittest.TestCase):
         Q = 0
 
         solver.AP.method = "cheb"
+        solver.compute_C(0, Q, ignore_cache=True)
         Ap_cheb = solver.A_plus(Q, times)
 
         solver.AP.method = "trapz"
+        solver.compute_C(0, Q, ignore_cache=True)
         Ap_trapz = solver.A_plus(Q, times)
 
         np.testing.assert_allclose(Ap_cheb, Ap_trapz, atol=1e-2, rtol=1e-2)
