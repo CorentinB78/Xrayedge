@@ -17,13 +17,59 @@ class QuasiToeplitzMatrix(LinearOperator):
             corrections -- pair of columns which are added as corrections
             dtype -- data type (default is complex)
         """
-        self.c_r = (c, r)
-        self.corrections = corrections
+        self.c_r = (np.asarray(c), np.asarray(r))
+        self.corrections = np.asarray(corrections)
         super().__init__(dtype, shape=(len(c), len(r)))
 
     def _matvec(self, x):
         out = linalg.matmul_toeplitz(self.c_r, x, check_finite=False)
         out[:] += x[0] * self.corrections[0] + x[-1] * self.corrections[1]
+        return out
+
+    def to_array(self):
+        c, r = self.c_r
+        out = linalg.toeplitz(c, r)
+        out[:, 0] += self.corrections[0]
+        out[:, -1] += self.corrections[1]
+        return out
+
+
+class BlockLinearOperator(LinearOperator):
+    def __init__(self, linop_array, dtype=complex, check_shapes=False):
+        self.blocks = np.asarray(linop_array, dtype=LinearOperator)
+
+        assert self.blocks.ndim == 2
+        supershape = self.blocks.shape
+
+        shape = self.blocks[0, 0].shape
+        if check_shapes:
+            for op in self.blocks.flatten():
+                assert op.shape == shape
+        self.subshape = shape
+
+        super().__init__(
+            dtype, shape=(supershape[0] * shape[0], supershape[1] * shape[1])
+        )
+
+    def _matvec(self, x):
+        out = np.zeros(self.shape[0], dtype=self.dtype)
+        N, M = self.subshape
+        for i in range(self.blocks.shape[0]):
+            for j in range(self.blocks.shape[1]):
+                out[i * N : (i + 1) * N] += self.blocks[i, j] @ x[j * M : (j + 1) * M]
+
+        return out
+
+    def to_array(self):
+        out = np.empty(self.shape, dtype=self.dtype)
+        N, M = self.subshape
+
+        for i in range(self.blocks.shape[0]):
+            for j in range(self.blocks.shape[1]):
+                out[i * N : (i + 1) * N, j * M : (j + 1) * M] = self.blocks[
+                    i, j
+                ].to_array()
+
         return out
 
 
@@ -142,21 +188,14 @@ def solve_quasi_dyson(
 
         vec_b = g_less(t_array - t)
 
+        c[0] += 1.0
+        mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
+
         if method == "trapz-LU":
-            mat_M = linalg.toeplitz(c, r)
-
-            mat_M[:, 0] -= correc_0
-            mat_M[:, -1] -= correc_1
-
-            for p in range(N):
-                mat_M[p, p] += 1.0
-
+            mat_M = mat_M.to_array()
             return t_array, linalg.solve(mat_M, vec_b)
 
         elif method == "trapz-GMRES":
-            c[0] += 1.0
-            mat_M = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
-
             res, info = gmres(mat_M, vec_b, tol=tol_gmres, atol=atol_gmres)
             if info > 0:
                 print("/!\ GMRES did not converge.")
