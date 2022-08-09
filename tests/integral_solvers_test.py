@@ -165,22 +165,22 @@ class TestSolvePseudoDyson(unittest.TestCase):
         time, phi = solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, 0, [0], [V], 10, method="cheb"
         )
-        np.testing.assert_allclose(phi, 1.0 / (1.0 + V * t))
+        np.testing.assert_allclose(phi[0], 1.0 / (1.0 + V * t))
 
         time, phi = solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, 0, [0], [V], 10, method="cheb"
         )
-        np.testing.assert_allclose(phi, 0.0)
+        np.testing.assert_allclose(phi[0], 0.0)
 
         time, phi = solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, 0, [0], [V], 20, method="cheb"
         )
-        np.testing.assert_allclose(phi, np.exp(V * (time - t)))
+        np.testing.assert_allclose(phi[0], np.exp(V * (time - t)))
 
         time, phi = solve_quasi_dyson(
             lambda a, b: np.sin, lambda a, b: np.cos, t, 0, [0], [V], 50, method="cheb"
         )
-        np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-4)
+        np.testing.assert_allclose(phi[0], self.solution_ref(time), atol=1e-4)
 
     def test_trapz_auto_refine(self):
         V = 2.0
@@ -210,17 +210,17 @@ class TestSolvePseudoDyson(unittest.TestCase):
         time, phi = solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, 0, [0], [V], 10, method="trapz"
         )
-        np.testing.assert_allclose(phi, 1.0 / (1.0 + V * t))
+        np.testing.assert_allclose(phi[0], 1.0 / (1.0 + V * t))
 
         time, phi = solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, 0, [0], [V], 10, method="trapz"
         )
-        np.testing.assert_allclose(phi, 0.0)
+        np.testing.assert_allclose(phi[0], 0.0)
 
         time, phi = solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, 0, [0], [V], 1000, method="trapz"
         )
-        np.testing.assert_allclose(phi, np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(phi[0], np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
 
         time, phi = solve_quasi_dyson(
             lambda a, b: np.sin,
@@ -232,7 +232,7 @@ class TestSolvePseudoDyson(unittest.TestCase):
             100,
             method="trapz",
         )
-        np.testing.assert_allclose(phi, self.solution_ref(time), atol=1e-3)
+        np.testing.assert_allclose(phi[0], self.solution_ref(time), atol=1e-3)
 
     def test_second_order_cheb(self):
         gl = lambda x: np.sin(1.5 * x) * np.exp(-((x - 1.0) ** 2) / 3.0)
@@ -257,8 +257,8 @@ class TestSolvePseudoDyson(unittest.TestCase):
         f1 = -f1[:, 0]
 
         np.testing.assert_array_less(f1_err, 1e-8)
-        np.testing.assert_allclose(f_vals, f0 + V * f1, atol=1e-8)
-        np.testing.assert_allclose((f_vals - f0) / V, f1, atol=1e-5)
+        np.testing.assert_allclose(f_vals[0, :], f0 + V * f1, atol=1e-8)
+        np.testing.assert_allclose((f_vals[0, :] - f0) / V, f1, atol=1e-5)
 
     def test_second_order_trapz(self):
         gl = lambda x: np.sin(1.5 * x) * np.exp(-((x - 1.0) ** 2) / 3.0)

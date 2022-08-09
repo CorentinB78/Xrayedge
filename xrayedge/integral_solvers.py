@@ -151,9 +151,13 @@ def solve_quasi_dyson(
     assert t > 0.0
     assert N > 1
     assert len(orbitals) == len(couplings)
+    assert orb in orbitals
+    orbitals = np.asarray(orbitals)
+    couplings = np.asarray(couplings)
+    nr_orb = len(orbitals)
 
     if method == "trapz":
-        if N < 200:
+        if N * nr_orb < 200:
             method = "trapz-LU"
         else:
             method = "trapz-GMRES"
@@ -184,11 +188,10 @@ def solve_quasi_dyson(
             mat_M[m, m] += 1.0
 
         vec_b = g_less(orb, orb)(t_array - t)
-        return t_array, linalg.solve(mat_M, vec_b)
+        return t_array, linalg.solve(mat_M, vec_b)[None, :]
 
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
-        nr_orb = len(orbitals)
 
         blocks = np.empty((nr_orb, nr_orb), dtype=QuasiToeplitzMatrix)
 
@@ -226,16 +229,16 @@ def solve_quasi_dyson(
 
         if method == "trapz-LU":
             mat_M = mat_M.to_array()
-            return t_array, linalg.solve(mat_M, vec_b)
+            return t_array, linalg.solve(mat_M, vec_b).reshape((nr_orb, N))
 
         elif method == "trapz-GMRES":
             res, info = gmres(mat_M, vec_b, tol=tol_gmres, atol=atol_gmres)
             if info > 0:
-                print("/!\ GMRES did not converge.")
+                raise RuntimeError("/!\ GMRES did not converge.")
             elif info < 0:
                 raise RuntimeError("Problem with GMRES")
 
-            return t_array, res
+            return t_array, res.reshape((nr_orb, N))
 
     raise ValueError(f'Method "{method}" not found.')
 
@@ -282,6 +285,9 @@ def solve_quasi_dyson_last_time(
     Returns:
         (value, error, final number of samples)
     """
+    orbitals = np.asarray(orbitals)
+    couplings = np.asarray(couplings)
+
     if start_N is None:
         N = 10
     else:
@@ -304,7 +310,8 @@ def solve_quasi_dyson_last_time(
         tol_gmres=tol_gmres,
         atol_gmres=atol_gmres,
     )
-    f = f_vals[-1]
+    orb_idx = np.argwhere(orbitals == orb)[0][0]
+    f = f_vals[orb_idx, -1]
 
     while True:
 
@@ -326,7 +333,7 @@ def solve_quasi_dyson_last_time(
             tol_gmres=tol_gmres,
             atol_gmres=atol_gmres,
         )
-        new_f = f_vals[-1]
+        new_f = f_vals[orb_idx, -1]
 
         err = abs(f - new_f)
         f = new_f
