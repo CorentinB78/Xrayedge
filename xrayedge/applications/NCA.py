@@ -26,7 +26,7 @@ class XrayForNCASolver:
         )
 
         self.correlator_solver = CorrelatorSolver(
-            QPC(self.PP), [0], [self.PP.V_cap], self.AP
+            QPC(self.PP), self.PP.orbitals, self.PP.couplings, self.AP
         )
 
     def G_grea(self, t_array):
