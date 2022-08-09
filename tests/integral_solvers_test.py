@@ -55,7 +55,7 @@ class TestChebPoints(unittest.TestCase):
         )
 
 
-class TestSolvePseudoDyson(unittest.TestCase):
+class TestQuasiDysonSingleOrbital(unittest.TestCase):
     @property
     def solution_ref(self):
         x = np.array(
@@ -297,6 +297,64 @@ class TestSolvePseudoDyson(unittest.TestCase):
         )
         f1_err = f1[:, 1]
         f1 = -f1[:, 0]
+
+        np.testing.assert_array_less(f1_err, 1e-8)
+        np.testing.assert_allclose(f_vals[0, :], f0 + V * f1, atol=1e-8)
+        np.testing.assert_allclose((f_vals[0, :] - f0) / V, f1, atol=1e-5)
+
+
+class TestQuasiDysonMultiOrbital(unittest.TestCase):
+    def test_second_order_trapz(self):
+        gl = lambda a, b: lambda x: np.sin(1.5 * x * (b - a)) * np.exp(
+            -((x - 1.0) ** 2) / 3.0
+        )
+        gg = lambda a, b: lambda x: np.cos(x * (b - a) + 2.0) * np.exp(
+            -((x + 0.5) ** 2) / 2.0
+        )
+        t = 3.0
+        V = 1e-4
+        orb = 0
+        orbitals = [0, 1]
+        couplings = V * np.asarray([1.0, 0.5])
+
+        times, f_vals = solve_quasi_dyson(
+            gl, gg, t, orb, orbitals, couplings, 300, method="trapz-GMRES"
+        )
+
+        ### perturbation orders in V
+        f0 = np.array([gl(j, orb)(times - t) for j in orbitals])
+        f1 = np.array(
+            [
+                [
+                    np.array(
+                        integrate.quad(
+                            lambda x: gg(j, 0)(u - x) * gl(0, orb)(x - t), 0, u
+                        )[:2]
+                    )
+                    + 0.5
+                    * np.array(
+                        integrate.quad(
+                            lambda x: gg(j, 1)(u - x) * gl(1, orb)(x - t), 0, u
+                        )[:2]
+                    )
+                    + np.array(
+                        integrate.quad(
+                            lambda x: gl(j, 0)(u - x) * gl(0, orb)(x - t), u, t
+                        )[:2]
+                    )
+                    + 0.5
+                    * np.array(
+                        integrate.quad(
+                            lambda x: gl(j, 1)(u - x) * gl(1, orb)(x - t), u, t
+                        )[:2]
+                    )
+                    for u in times
+                ]
+                for j in orbitals
+            ]
+        )
+        f1_err = f1[:, :, 1]
+        f1 = -f1[:, :, 0]
 
         np.testing.assert_array_less(f1_err, 1e-8)
         np.testing.assert_allclose(f_vals, f0 + V * f1, atol=1e-8)
