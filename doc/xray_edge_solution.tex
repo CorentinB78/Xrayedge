@@ -212,12 +212,12 @@ In the special case where the capacitive coupling acts on a single site of the r
 
 \paragraph{Piece-wise Linear Approximation (``trapz" in the code)}
 
-We want to solve Eq.~\eqref{eq:quasi_Dyson} at fixed $n$. We start by renaming $\varphi_t(u, j; t, n) \rightarrow f(u, j)$.
+We want to solve Eq.~\eqref{eq:quasi_Dyson} at fixed $n$. We start by renaming $\varphi_t(u, j; t, n) \rightarrow f_j(u)$.
 We approximate $f$, $g^<$ and $g^>$ by piece-wise linear functions, defined by their values on a regular time grid $u_i = i \dd{t}$ with $t = N \dd{t}$ and $N$ the number of intervals.
 
 By evaluating Eq.~\eqref{eq:quasi_Dyson} at each $u=u_i$, the two time integrals can be cut according to the same grid:
 \begin{equation}
-	f(u_i, j) = g_{jn}^<(u_i - t) + W \sum_{k \in \mathcal{S}} v_k \qty[ \sum_{r=0}^{i-1}\int_{u_r}^{u_{r+1}} \dd{v} g_{jk}^>(u_i - v) f(v, k) + \sum_{r=i}^{N-1} \int_{u_r}^{u_{r+1}} \dd{v} g_{jk}^<(u_i - v) f(v, k) ]
+	f_j(u_i) = g_{jn}^<(u_i - t) + W \sum_{k \in \mathcal{S}} v_k \qty[ \sum_{r=0}^{i-1}\int_{u_r}^{u_{r+1}} \dd{v} g_{jk}^>(u_i - v) f_k(v) + \sum_{r=i}^{N-1} \int_{u_r}^{u_{r+1}} \dd{v} g_{jk}^<(u_i - v) f_k(v) ]
 \end{equation}
 The integrals are (ignoring irrelevant space indices):
 \begin{equation}
@@ -242,24 +242,23 @@ In the case where the \ac{QD} is coupled to a single site in the reservoir, we c
 \end{equation}
 We see a linear problem with a matrix that is almost Toeplitz, up to the two last terms. This can be solved efficiently with the GMRES algorithm and using the quasi Toeplitz nature of the problem to speedup matrix--vector product with FFT.
 
-In the general case, if we want space indices to also have this advantageous Toeplitz structure, we need to assume that the isolated reservoir with Hamiltonian $H_Q$ is invariant by translation in space.
-Then, $g_{jk}(u) = g_{j - k}(u)$.
-
-We introduce (yet) another notation: $f_{i; j} = f(u_i, j)$ and similarly for $g^{</>}$.
-Then we have:
+In the general case, we have:
 \begin{equation}
 	\begin{split}
-		f_{i;j} = g_{i - N;j-n}^< + \frac{\dd{t}}{6} W \sum_{k \in \mathcal{S}} v_k \left[
-		\sum_{r=0}^{i-1} \qty(g^>_{i-r-1; j-k} + 4 g^>_{i - r; j-k} + g^>_{i-r + 1; j-k}) f_{r;k} \;\; + \right.
+		f_{j}(u_i) = g_{jn}(u_{i-N})^< + \frac{\dd{t}}{6} W \sum_{k \in \mathcal{S}} v_k \left[
+		\sum_{r=0}^{i-1} \qty(g^>_{jk}(u_{i-r-1}) + 4 g^>_{jk}(u_{i-r}) + g^>_{jk}(u_{i-r+1})) f_{k}(u_r) \right.
 		\\
-		\sum_{r=i+1}^{N} \qty(g^<_{i-r-1;j-k} + 4 g^<_{i - r;j-k} + g^<_{i-r+1;j-k}) f_{r;k} \;\; +
+		+ \quad \sum_{r=i+1}^{N} \qty(g^<_{jk}(u_{i-r-1}) + 4 g^<_{jk}(u_{i-r}) + g^<_{jk}(u_{i-r+1})) f_{k}(u_r)
 		\\
-		\left. \qty(g^<_{-1;j-k} + 2 g^<_{0;j-k} + 2 g^>_{0;j-k} + g^>_{1;j-k}) f_{i;k}
-		- \qty(2 g^>_{i;j-k} + g^>_{i + 1;j-k}) f_{0;k}
-		- \qty(g^<_{i-N-1;j-k} + 2 g^<_{i-N;j-k}) f_{N;k}
-		\vphantom{\sum_{i=0}^N}\right]
+		+ \quad \qty(g^<_{jk}(u_{-1}) + 2 g^<_{jk}(u_0) + 2 g^>_{jk}(u_0) + g^>_{jk}(u_1)) f_{k}(u_i)
+		\\
+		-\quad \qty(2 g^>_{jk}(u_i) + g^>_{jk}(u_{i+1})) f_{k}(u_0)
+		\\
+		-\quad \qty(g^<_{jk}(u_{i-N-1}) + 2 g^<_{jk}(u_{i-N})) f_{k}(u_{N})
+		\left. \vphantom{\sum_{i=0}^N}\right]
 	\end{split}
 \end{equation}
+which is a linear problem where the linear operator is ``almost Toeplitz" by block (but not close to being Toeplitz itself).
 
 \paragraph{General scheme}
 
