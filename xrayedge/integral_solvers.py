@@ -213,7 +213,9 @@ def solve_quasi_dyson(
                 correc_1 = gl[N - 1 :: -1] * 2.0
                 correc_1[1:N] += gl[N - 1 : 0 : -1]
 
-                c[0] += 1.0
+                if j == k:
+                    c[0] += 1.0
+
                 blocks[j, k] = QuasiToeplitzMatrix(c, r, (-correc_0, -correc_1))
 
         mat_M = BlockLinearOperator(blocks, check_shapes=True)
