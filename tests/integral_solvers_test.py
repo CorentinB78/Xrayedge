@@ -5,6 +5,7 @@ import xrayedge as xray
 from xrayedge.integral_solvers import (
     cheb_points,
     QuasiToeplitzMatrix,
+    BlockLinearOperator,
     solve_quasi_dyson,
     solve_quasi_dyson_last_time,
 )
@@ -29,6 +30,21 @@ class TestQuasiToeplitzMatrix(unittest.TestCase):
         )
 
         np.testing.assert_array_almost_equal(M @ b, np.dot(M_ref, b))
+
+
+class TestBlockLinearOperator(unittest.TestCase):
+    def test_matvec(self):
+        M = QuasiToeplitzMatrix([0, 2, 1], [-2, 3, 3], ([4, 3, 5], [2, 3, 4]))
+        P = QuasiToeplitzMatrix([0, -2, 1], [-2, 3, 6], ([4, -3, 5], [2, 3, -4]))
+        Q = QuasiToeplitzMatrix([-3, 2, 1], [2, 3, 3], ([1, 3, 5], [2, 3, 4]))
+        R = QuasiToeplitzMatrix([0, 2, -1], [2, 3, -8], ([4, 3, 5], [-2, 3, 4]))
+
+        MM = BlockLinearOperator([[M, P], [Q, R]])
+
+        vec = MM @ np.arange(6)
+
+        np.testing.assert_allclose(vec[:3], M @ np.arange(3) + P @ np.arange(3, 6))
+        np.testing.assert_allclose(vec[3:6], Q @ np.arange(3) + R @ np.arange(3, 6))
 
 
 class TestChebPoints(unittest.TestCase):
