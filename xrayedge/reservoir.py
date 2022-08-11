@@ -217,7 +217,8 @@ class OneDChainBetweenTwoLeads(Reservoir):
         w_array = np.atleast_1d(w_array)
         GR = self.g_reta(w_array, Q)[:, 0, -1]
         return (
-            self.delta_leads_R_left(w_array).imag
+            4
+            * self.delta_leads_R_left(w_array).imag
             * self.delta_leads_R_right(w_array).imag
             * np.abs(GR) ** 2
         )
