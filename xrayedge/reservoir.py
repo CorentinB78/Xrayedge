@@ -13,19 +13,23 @@ class Reservoir:
     def __init__(self):
         pass
 
-    def g_less_t(self, Q, orb_a=0, orb_b=0):
+    def g_less_t(self, Q):
         """
-        Lesser GF in times of contact site.
+        Lesser GF in times
 
-        Returns times, values
+        Returns:
+            times -- 1D array
+            values -- 3D array of shape (times, space, space)
         """
         raise NotImplementedError
 
-    def g_grea_t(self, Q, orb_a=0, orb_b=0):
+    def g_grea_t(self, Q):
         """
-        Greater GF in times of contact site.
+        Greater GF in times
 
-        Returns times, values
+        Returns:
+            times -- 1D array
+            values -- 3D array of shape (times, space, space)
         """
         raise NotImplementedError
 
@@ -39,8 +43,10 @@ class Reservoir:
 
         @lru_cache
         def func(orb_a, orb_b):
-            times, g_less_t = self.g_less_t(Q, orb_a=orb_a, orb_b=orb_b)
-            return interpolate.CubicSpline(times, g_less_t, extrapolate=False)
+            times, g_less_t = self.g_less_t(Q)
+            return interpolate.CubicSpline(
+                times, g_less_t[:, orb_a, orb_b], extrapolate=False
+            )
 
         return func
 
@@ -54,8 +60,10 @@ class Reservoir:
 
         @lru_cache
         def func(orb_a, orb_b):
-            times, g_grea_t = self.g_grea_t(Q, orb_a=orb_a, orb_b=orb_b)
-            return interpolate.CubicSpline(times, g_grea_t, extrapolate=False)
+            times, g_grea_t = self.g_grea_t(Q)
+            return interpolate.CubicSpline(
+                times, g_grea_t[:, orb_a, orb_b], extrapolate=False
+            )
 
         return func
 
@@ -186,33 +194,38 @@ class OneDChainBetweenTwoLeads(Reservoir):
 
         return left + right
 
-    def g_less_t(self, Q, orb_a, orb_b):
+    @lru_cache
+    def g_less_t(self, Q):
         """
         Lesser GF in times
 
-        Returns (times, vals) a pair of 1D arrays
+        Returns:
+            times -- 1D array
+            values -- 3D array of shape (times, space, space)
         """
         if self.verbose:
             print("[Xray/Reservoir] computing g_less_t...", flush=True)
 
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
-        g_less = self.g_less(w, Q=Q)[:, orb_a, orb_b]
-        # TODO: avoid redundant computation of g_less/g_grea
+        g_less = self.g_less(w, Q=Q)
 
         times, g_less_t = tb.inv_fourier_transform(w, g_less, axis=0)
         return times, g_less_t
 
-    def g_grea_t(self, Q, orb_a, orb_b):
+    @lru_cache
+    def g_grea_t(self, Q):
         """
         Greater GF in times
 
-        Returns (times, vals) a pair of 1D arrays
+        Returns:
+            times -- 1D array
+            values -- 3D array of shape (times, space, space)
         """
         if self.verbose:
             print("[Xray/Reservoir] computing g_grea_t...", flush=True)
 
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
-        g_grea = self.g_grea(w, Q=Q)[:, orb_a, orb_b]
+        g_grea = self.g_grea(w, Q=Q)
 
         times, g_grea_t = tb.inv_fourier_transform(w, g_grea, axis=0)
         return times, g_grea_t
