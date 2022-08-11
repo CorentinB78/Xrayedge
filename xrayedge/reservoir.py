@@ -100,8 +100,8 @@ class OneDChainBetweenTwoLeads(Reservoir):
         """
         w_array = np.atleast_1d(w_array)
         return (
-            -(2 * tb.fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
-            * 1j
+            -2j
+            * (2 * tb.fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
             * np.imag(self.delta_leads_R_left(w_array))
         )
 
@@ -111,8 +111,8 @@ class OneDChainBetweenTwoLeads(Reservoir):
         """
         w_array = np.atleast_1d(w_array)
         return (
-            -(2 * tb.fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
-            * 1j
+            -2j
+            * (2 * tb.fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
             * np.imag(self.delta_leads_R_right(w_array))
         )
 
@@ -150,12 +150,12 @@ class OneDChainBetweenTwoLeads(Reservoir):
         GA = np.conj(GR).swapaxes(1, 2)
 
         left = GR[:, :, 0:1] * GA[:, 0:1, :]
-        left *= self.delta_leads_K_left(w_array)[:, None, None] - 1j * np.imag(
+        left *= 0.5 * self.delta_leads_K_left(w_array)[:, None, None] - 1j * np.imag(
             self.delta_leads_R_left(w_array)[:, None, None]
         )
 
         right = GR[:, :, -1:] * GA[:, -1:, :]
-        right *= self.delta_leads_K_right(w_array)[:, None, None] - 1j * np.imag(
+        right *= 0.5 * self.delta_leads_K_right(w_array)[:, None, None] - 1j * np.imag(
             self.delta_leads_R_right(w_array)[:, None, None]
         )
 
@@ -172,12 +172,12 @@ class OneDChainBetweenTwoLeads(Reservoir):
         GA = np.conj(GR).swapaxes(1, 2)
 
         left = GR[:, :, 0:1] * GA[:, 0:1, :]
-        left *= self.delta_leads_K_left(w_array)[:, None, None] + 1j * np.imag(
+        left *= 0.5 * self.delta_leads_K_left(w_array)[:, None, None] + 1j * np.imag(
             self.delta_leads_R_left(w_array)[:, None, None]
         )
 
         right = GR[:, :, -1:] * GA[:, -1:, :]
-        right *= self.delta_leads_K_right(w_array)[:, None, None] + 1j * np.imag(
+        right *= 0.5 * self.delta_leads_K_right(w_array)[:, None, None] + 1j * np.imag(
             self.delta_leads_R_right(w_array)[:, None, None]
         )
 
