@@ -65,7 +65,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
     Abstract class for a reservoir made of a 1D central chain coupled at each end to a lead. Spinless fermions only.
     """
 
-    def __init__(self, physics_params, nr_samples_fft, w_max):
+    def __init__(self, physics_params, nr_samples_fft, w_max, verbose=False):
         """
         Arguments:
             physics_params -- anobject containing parameters 'beta', 'bias_res', 'hamiltonian_res', 'orbitals', 'couplings'.
@@ -78,9 +78,12 @@ class OneDChainBetweenTwoLeads(Reservoir):
         self.PP = copy(physics_params)
 
         assert self.PP.hamiltonian_res.ndim == 2
+        assert len(self.PP.orbitals) == len(self.PP.couplings)
+        assert len(self.PP.couplings) <= len(self.PP.hamiltonian_res)
 
         self.w_max = w_max
         self.N_fft = nr_samples_fft
+        self.verbose = verbose
 
     def delta_leads_R_left(self, w_array):
         """
@@ -189,8 +192,12 @@ class OneDChainBetweenTwoLeads(Reservoir):
 
         Returns (times, vals) a pair of 1D arrays
         """
+        if self.verbose:
+            print("[Xray/Reservoir] computing g_less_t...", flush=True)
+
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
         g_less = self.g_less(w, Q=Q)[:, orb_a, orb_b]
+        # TODO: avoid redundant computation of g_less/g_grea
 
         times, g_less_t = tb.inv_fourier_transform(w, g_less, axis=0)
         return times, g_less_t
@@ -201,6 +208,9 @@ class OneDChainBetweenTwoLeads(Reservoir):
 
         Returns (times, vals) a pair of 1D arrays
         """
+        if self.verbose:
+            print("[Xray/Reservoir] computing g_grea_t...", flush=True)
+
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
         g_grea = self.g_grea(w, Q=Q)[:, orb_a, orb_b]
 
@@ -314,7 +324,6 @@ class ExtendedQPC(OneDChainBetweenTwoLeads):
         """
         PP = copy(physics_params)
         N = len(PP.eps_res)
-        assert len(PP.couplings) <= N
         H = np.zeros((N, N), dtype=complex)
 
         for i in range(N):

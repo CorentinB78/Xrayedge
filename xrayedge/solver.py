@@ -129,7 +129,9 @@ class CorrelatorSolver:
     Data is cached after calculation, so parameters should not be changed.
     """
 
-    def __init__(self, reservoir, orbitals, capacitive_couplings, accuracy_params):
+    def __init__(
+        self, reservoir, orbitals, capacitive_couplings, accuracy_params, verbose=False
+    ):
         """
         Arguments:
             reservoir -- a `Reservoir` instance
@@ -141,6 +143,7 @@ class CorrelatorSolver:
         self.orbitals = np.asarray(orbitals)
         self.capacitive_couplings = np.asarray(capacitive_couplings)
         self.AP = copy(accuracy_params)
+        self.verbose = verbose
 
         self.N = 3  # nr of different charge states affecting the QPC
         self._cache_C_interp = [[None] * self.N, [None] * self.N]
@@ -238,12 +241,18 @@ class CorrelatorSolver:
         self._start_N = []
         self._times = []
 
+        if self.verbose:
+            print("[Xray/CorrelatorSolver] Computing C...", flush=True)
+
         times, C_vals, err = cum_int_adapt_simpson(
             lambda t: self.phi(sign, Q, t, use_cache_N=True, cache_N=True),
             self.AP.time_extrapolate,
             tol=self.AP.tol_C,
         )
         C_vals *= -sign
+
+        if self.verbose:
+            print("[Xray/CorrelatorSolver] ... Done.", flush=True)
 
         slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
         intercept = C_vals[-1] - slope * times[-1]
