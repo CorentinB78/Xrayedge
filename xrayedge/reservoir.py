@@ -60,216 +60,242 @@ class Reservoir:
         return func
 
 
-class TwoLeadsReservoir(Reservoir):
+class OneDChainBetweenTwoLeads(Reservoir):
     """
-    Abstract class for a two-lead reservoir. A type of reservoir with a central site coupled to two baths with a chemical potential difference.
+    Abstract class for a reservoir made of a 1D central chain coupled at each end to a lead. Spinless fermions only.
     """
 
-    def __init__(
-        self, physics_params, nr_samples_fft=None, w_max=None, max_fft_size=int(1e7)
-    ):
+    def __init__(self, physics_params, nr_samples_fft, w_max):
+        """
+        Arguments:
+            physics_params -- anobject containing parameters 'beta', 'bias_res', 'hamiltonian_res', 'orbitals', 'couplings'.
+
+        Keyword Arguments:
+            nr_samples_fft -- number of points for FFT
+            w_max -- max frequency for FFT
+        """
         super().__init__()
         self.PP = copy(physics_params)
 
-        spreads = np.array([self.PP.D_res, 1.0 / self.PP.beta])
-        centers = np.array(
-            [
-                self.PP.eps_res,
-                +0.5 * self.PP.bias_res,
-                -0.5 * self.PP.bias_res,
-            ]
-        )
+        assert self.PP.hamiltonian_res.ndim == 2
 
-        if w_max is None:
-            w_max = np.max(np.abs(centers[:, None] + spreads[None, :]))
-            w_max = 100 * max(
-                w_max, np.max(np.abs(centers[:, None] - spreads[None, :]))
-            )
         self.w_max = w_max
+        self.N_fft = nr_samples_fft
 
-        dw = np.min(spreads) / 100.0
-        ideal_N_fft = int(2 * w_max / dw + 0.5)
-
-        if nr_samples_fft is None:
-            self.N_fft = ideal_N_fft
-        else:
-            self.N_fft = nr_samples_fft
-
-        if self.N_fft >= max_fft_size:
-            r = self.N_fft / max_fft_size
-            self.w_max = self.w_max / np.sqrt(r)
-            dw = dw * np.sqrt(r)
-            print(f"/!\ [Reservoir] FFT requires {self.N_fft} grid points.")
-            self.N_fft = int(2 * self.w_max / dw + 0.5)
-            print(f"Change to {self.N_fft} grid points.")
-
-    def delta_leads_R(self, w_array):
+    def delta_leads_R_left(self, w_array):
         """
-        Retarded hybridization function in frequencies for left and right leads (together).
+        Retarded hybridization function in frequencies for left lead.
         """
         raise NotImplementedError
 
-    def delta_leads_K(self, w_array):
+    def delta_leads_R_right(self, w_array):
         """
-        Keldysh hybridization function in frequencies for left and right leads (together).
+        Retarded hybridization function in frequencies for right lead.
         """
+        raise NotImplementedError
+
+    def delta_leads_K_left(self, w_array):
+        """
+        Keldysh hybridization function in frequencies for left lead.
+        """
+        w_array = np.atleast_1d(w_array)
         return (
-            -2j
-            * (
-                tb.fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta)
-                + tb.fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta)
-                - 1.0
-            )
-            * np.imag(self.delta_leads_R(w_array))
+            -(2 * tb.fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
+            * 1j
+            * np.imag(self.delta_leads_R_left(w_array))
+        )
+
+    def delta_leads_K_right(self, w_array):
+        """
+        Keldysh hybridization function in frequencies for right lead.
+        """
+        w_array = np.atleast_1d(w_array)
+        return (
+            -(2 * tb.fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
+            * 1j
+            * np.imag(self.delta_leads_R_right(w_array))
         )
 
     def g_reta(self, w_array, Q):
         """
-        Retarded GF in frequencies of central site.
-        """
-        raise NotImplementedError
+        Retarded GF in frequencies.
 
-    def g_keld(self, w_array, Q):
+        Returns a 3D array of shape (frequencies, space, space)
         """
-        Keldysh GF in frequencies of central site.
-        """
-        return np.abs(self.g_reta(w_array, Q)) ** 2 * self.delta_leads_K(w_array)
+        w_array = np.atleast_1d(w_array)
+        N = len(self.PP.hamiltonian_res)
+        couplings = np.zeros(N)
+        for orb, V in zip(self.PP.orbitals, self.PP.couplings):
+            couplings[orb] = V
+
+        mat = np.empty((len(w_array), N, N), dtype=complex)
+        mat[...] = w_array[:, None, None] - self.PP.hamiltonian_res[None, :, :]
+        mat[...] -= Q * np.diag(couplings)[None, :, :]
+        mat[:, 0, 0] -= self.delta_leads_R_left(w_array)
+        mat[:, -1, -1] -= self.delta_leads_R_right(w_array)
+
+        return np.linalg.inv(mat)
 
     def g_less(self, w_array, Q):
         """
-        Lesser GF in frequencies of central site.
+        Lesser GF in frequencies.
+
+        Returns a 3D array of shape (frequencies, space, space)
         """
-        return np.abs(self.g_reta(w_array, Q)) ** 2 * (
-            0.5 * self.delta_leads_K(w_array)
-            - 1.0j * np.imag(self.delta_leads_R(w_array))
+        w_array = np.atleast_1d(w_array)
+        GR = self.g_reta(w_array, Q)
+        GA = np.conj(GR).swapaxes(1, 2)
+
+        left = GR[:, :, 0:1] * GA[:, 0:1, :]
+        left *= self.delta_leads_K_left(w_array)[:, None, None] - 1j * np.imag(
+            self.delta_leads_R_left(w_array)[:, None, None]
         )
+
+        right = GR[:, :, -1:] * GA[:, -1:, :]
+        right *= self.delta_leads_K_right(w_array)[:, None, None] - 1j * np.imag(
+            self.delta_leads_R_right(w_array)[:, None, None]
+        )
+
+        return left + right
 
     def g_grea(self, w_array, Q):
         """
-        Greater GF in frequencies of central site.
+        Greater GF in frequencies.
+
+        Returns a 3D array of shape (frequencies, space, space)
         """
-        return np.abs(self.g_reta(w_array, Q)) ** 2 * (
-            0.5 * self.delta_leads_K(w_array)
-            + 1.0j * np.imag(self.delta_leads_R(w_array))
+        w_array = np.atleast_1d(w_array)
+        GR = self.g_reta(w_array, Q)
+        GA = np.conj(GR).swapaxes(1, 2)
+
+        left = GR[:, :, 0:1] * GA[:, 0:1, :]
+        left *= self.delta_leads_K_left(w_array)[:, None, None] + 1j * np.imag(
+            self.delta_leads_R_left(w_array)[:, None, None]
         )
 
-    def g_less_t(self, Q, orb_a=0, orb_b=0):
-        """
-        Lesser GF in times of contact site.
-        """
-        if orb_a != 0 or orb_b != 0:
-            raise ValueError(
-                "A TwoLeadsReservoir can be evaluated only at the central site (orbital=0)"
-            )
-        w = np.linspace(-self.w_max, self.w_max, self.N_fft)
-        g_less = self.g_less(w, Q=Q)
+        right = GR[:, :, -1:] * GA[:, -1:, :]
+        right *= self.delta_leads_K_right(w_array)[:, None, None] + 1j * np.imag(
+            self.delta_leads_R_right(w_array)[:, None, None]
+        )
 
-        times, g_less_t = tb.inv_fourier_transform(w, g_less)
+        return left + right
+
+    def g_less_t(self, Q, orb_a, orb_b):
+        """
+        Lesser GF in times
+
+        Returns (times, vals) a pair of 1D arrays
+        """
+        w = np.linspace(-self.w_max, self.w_max, self.N_fft)
+        g_less = self.g_less(w, Q=Q)[:, orb_a, orb_b]
+
+        times, g_less_t = tb.inv_fourier_transform(w, g_less, axis=0)
         return times, g_less_t
 
-    def g_grea_t(self, Q, orb_a=0, orb_b=0):
+    def g_grea_t(self, Q, orb_a, orb_b):
         """
-        Greater GF in times of contact site.
-        """
-        if orb_a != 0 or orb_b != 0:
-            raise ValueError(
-                "A TwoLeadsReservoir can be evaluated only at the central site (orbital=0)"
-            )
-        w = np.linspace(-self.w_max, self.w_max, self.N_fft)
-        g_grea = self.g_grea(w, Q=Q)
+        Greater GF in times
 
-        times, g_grea_t = tb.inv_fourier_transform(w, g_grea)
+        Returns (times, vals) a pair of 1D arrays
+        """
+        w = np.linspace(-self.w_max, self.w_max, self.N_fft)
+        g_grea = self.g_grea(w, Q=Q)[:, orb_a, orb_b]
+
+        times, g_grea_t = tb.inv_fourier_transform(w, g_grea, axis=0)
         return times, g_grea_t
 
     def occupation(self, Q):
         w, dw = np.linspace(-self.w_max, self.w_max, self.N_fft, retstep=True)
-        g_less = self.g_less(w, Q=Q)
+        g_less = self.g_less(w, Q=Q).diagonal(0, 1, 2)
 
-        return integrate.simpson(y=g_less.imag, dx=dw) / (2 * np.pi)
+        return integrate.simpson(y=g_less.imag, dx=dw, axis=0) / (2 * np.pi)
 
     def transmission(self, w_array, Q):
-        return self.delta_leads_R(w_array).imag * self.g_reta(w_array, Q).imag
+        w_array = np.atleast_1d(w_array)
+        GR = self.g_reta(w_array, Q)[:, 0, -1]
+        return (
+            self.delta_leads_R_left(w_array).imag
+            * self.delta_leads_R_right(w_array).imag
+            * np.abs(GR) ** 2
+        )
 
 
-class QuantumDot(TwoLeadsReservoir):
+class QuantumDot(OneDChainBetweenTwoLeads):
     """
     Quantum Dot. A type of reservoir with a central site coupled to two baths of infintie bandwidth and with a chemical potential difference.
 
     Provides real time Green functions at the central site for different charge offsets Q.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, physics_params, nr_samples_fft, w_max):
         """
         Arguments:
-            physics_params -- a class with parameters `D_res`, `eps_res`, `bias_res`, `beta` and `V_cap`.
+            physics_params -- an object with parameters `D_res`, `eps_res`, `bias_res`, `beta`, `orbitals` and `couplings`.
 
         Keyword Arguments:
             nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
             w_max -- max frequency for FFT (default: {None} which auto determine an optimal value)
         """
-        super().__init__(*args, **kwargs)
+        PP = copy(physics_params)
+        PP.hamiltonian_res = np.array([[PP.eps_res]])
+        del PP.eps_res
+        super().__init__(PP, nr_samples_fft, w_max)
 
-    def delta_leads_R(self, w_array):
+    def delta_leads_R_left(self, w_array):
         """
-        Retarded hybridization function in frequencies for left and right leads (together).
+        Retarded hybridization function in frequencies for left lead.
         """
-        return -1j * self.PP.D_res * np.ones_like(w_array)
+        w_array = np.atleast_1d(w_array)
+        return -1j * self.PP.D_res / 2.0 * np.ones_like(w_array)
 
-    def g_reta(self, w_array, Q):
+    def delta_leads_R_right(self, w_array):
         """
-        Retarded GF in frequencies of central site.
+        Retarded hybridization function in frequencies for right lead.
         """
-        w_array = np.asarray(w_array)
-        return 1.0 / (
-            w_array - self.PP.eps_res - Q * self.PP.V_cap - self.delta_leads_R(w_array)
-        )
+        w_array = np.atleast_1d(w_array)
+        return -1j * self.PP.D_res / 2.0 * np.ones_like(w_array)
 
 
-class QPC(TwoLeadsReservoir):
+class QPC(OneDChainBetweenTwoLeads):
     """
     Quantum Point Contact. A type of reservoir with a central site coupled to two semicircular baths and with a chemical potential difference.
 
     Provides real time Green functions at the central site for different charge offsets Q.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, physics_params, nr_samples_fft, w_max):
         """
         Arguments:
-            physics_params -- a class with parameters `D_res`, `eps_res`, `mu_res`, `eta_res`, `bias_res`, `beta` and `V_cap`.
+            physics_params -- an object with parameters `D_res`, `eps_res`, `mu_res`, `eta_res`, `bias_res`, `beta`, `couplings` and `orbitals`.
 
         Keyword Arguments:
-            nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
-            w_max -- max frequency for FFT (default: {None} which auto determine an optimal value)
+            nr_samples_fft -- number of grid points for FFT
+            w_max -- max frequency for FFT
         """
-        super().__init__(*args, **kwargs)
+        PP = copy(physics_params)
+        PP.hamiltonian_res = np.array(
+            [[PP.eps_res + PP.D_res - PP.mu_res - PP.eta_res * 1j]]
+        )
+        del PP.eps_res
+        super().__init__(PP, nr_samples_fft, w_max)
 
-    def delta_leads_R(self, w_array):
+    def delta_leads_R_left(self, w_array):
         """
-        Retarded hybridization function in frequencies for left and right leads (together).
+        Retarded hybridization function in frequencies for left lead.
         """
-        w_array = np.asarray(w_array)
+        w_array = np.atleast_1d(w_array)
         t = self.PP.D_res / 2.0  # hopping
         sc_gf = tb.semicirc_retarded_gf(t)
-        return (
-            2.0
-            * t**2
-            * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
-        )
+        return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
 
-    def g_reta(self, w_array, Q):
+    def delta_leads_R_right(self, w_array):
         """
-        Retarded GF in frequencies of central site.
+        Retarded hybridization function in frequencies for right lead.
         """
-        w_array = np.asarray(w_array)
-        return 1.0 / (
-            w_array
-            + self.PP.mu_res
-            + self.PP.eta_res * 1j
-            - self.PP.eps_res
-            - self.PP.D_res
-            - Q * self.PP.V_cap
-            - self.delta_leads_R(w_array)
-        )
+        w_array = np.atleast_1d(w_array)
+        t = self.PP.D_res / 2.0  # hopping
+        sc_gf = tb.semicirc_retarded_gf(t)
+        return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
 
 
 class OneDChain(Reservoir):

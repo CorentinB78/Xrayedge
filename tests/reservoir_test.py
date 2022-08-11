@@ -14,15 +14,16 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
         PP.D_res = 10.0
         PP.eps_res = -2.0
         PP.bias_res = 0.5
-        PP.V_cap = 1.2
-        res = reservoir.QuantumDot(PP)
+        PP.orbitals = [0]
+        PP.couplings = [1.2]
+        res = reservoir.QuantumDot(PP, int(1e4), 100.0)
 
         self.PP = PP
         self.res = res
 
     def test_gf_reta_0(self):
         w = np.linspace(-50, 50, 1000)
-        gf_reta = self.res.g_reta(w, Q=0)
+        gf_reta = self.res.g_reta(w, Q=0)[:, 0, 0]
 
         gf_reta_ref = 1.0 / (w + 2.0 + 10.0j)
 
@@ -31,7 +32,7 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
     def test_gf_reta_1(self):
         w = np.linspace(-50, 50, 1000)
         Q = 0.5
-        gf_reta = self.res.g_reta(w, Q=Q)
+        gf_reta = self.res.g_reta(w, Q=Q)[:, 0, 0]
 
         gf_reta_ref = 1.0 / (w + 2.0 - 1.2 * Q + 10.0j)
 
@@ -39,7 +40,7 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
 
     def test_gf_less_0(self):
         w = np.linspace(-50, 50, 1000)
-        gf_less = self.res.g_less(w, Q=0)
+        gf_less = self.res.g_less(w, Q=0)[:, 0, 0]
 
         f_ref = 0.5 * (tb.fermi(w, 0.25, 1.0) + tb.fermi(w, -0.25, 1.0))
         gf_less_ref = -2.0j * f_ref * np.imag(1.0 / (w + 2.0 + 10.0j))
@@ -49,7 +50,7 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
     def test_gf_less_1(self):
         w = np.linspace(-50, 50, 1000)
         Q = 0.5
-        gf_less = self.res.g_less(w, Q=Q)
+        gf_less = self.res.g_less(w, Q=Q)[:, 0, 0]
 
         f_ref = 0.5 * (tb.fermi(w, 0.25, 1.0) + tb.fermi(w, -0.25, 1.0))
         gf_less_ref = -2.0j * f_ref * np.imag(1.0 / (w + 2.0 - 1.2 * Q + 10.0j))
@@ -65,15 +66,16 @@ class TestQPCFrequencyDomain(unittest.TestCase):
         PP.eps_res = 5.0
         PP.eta_res = 0.0
         PP.bias_res = 0.5
-        PP.V_cap = 1.2
-        res = reservoir.QPC(PP)
+        PP.orbitals = [0]
+        PP.couplings = [1.2]
+        res = reservoir.QPC(PP, int(1e4), 100.0)
 
         self.PP = PP
         self.res = res
 
     def test_gf_reta(self):
         w = np.linspace(-30, 30, 1000)
-        gf_reta = self.res.g_reta(w, Q=0)
+        gf_reta = self.res.g_reta(w, Q=0)[:, 0, 0]
 
         mask = w < 0.0
         testing.assert_allclose(gf_reta[mask].imag, 0.0)
@@ -105,8 +107,9 @@ class TestQPCFrequencyDomainEta(unittest.TestCase):
         PP.eps_res = 0.2
         PP.eta_res = 1.0
         PP.bias_res = 0.0
-        PP.V_cap = 0.1
-        res = reservoir.QPC(PP)
+        PP.orbitals = [0]
+        PP.couplings = [0.1]
+        res = reservoir.QPC(PP, int(1e4), 100.0)
 
         self.PP = PP
         self.res = res
@@ -119,9 +122,9 @@ class TestQPCFrequencyDomainEta(unittest.TestCase):
         testing.assert_allclose(gf_0, gf_1, atol=1e-4)
         testing.assert_allclose(gf_0, gf_2, atol=1e-4)
 
-        gf_0 = self.res.delta_leads_R(0.0)
-        gf_1 = self.res.delta_leads_R(1e-5)
-        gf_2 = self.res.delta_leads_R(-1e-5)
+        gf_0 = self.res.delta_leads_R_left(0.0)
+        gf_1 = self.res.delta_leads_R_left(1e-5)
+        gf_2 = self.res.delta_leads_R_left(-1e-5)
 
         testing.assert_allclose(gf_0, gf_1, atol=1e-4)
         testing.assert_allclose(gf_0, gf_2, atol=1e-4)

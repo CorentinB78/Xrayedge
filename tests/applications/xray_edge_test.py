@@ -7,14 +7,16 @@ class TestXRayEdgeSolver(unittest.TestCase):
     def test_nonreg_GF(self):
         PP = PhysicsParameters()
         PP.beta = 0.1
-        PP.V_cap = 1.5
+        PP.orbitals = [0]
+        PP.couplings = [1.5]
         PP.eps_sys = 0.0
         PP.bias_res = 0.0
 
         AP = AccuracyParameters(time_extrapolate=10.0)
-        AP.method = "cheb"
+        AP.method = "trapz"
         AP.tol_C = 1e-4
         AP.qdyson_rtol = 1e-4
+        AP.nr_freqs_res = int(1e5)
 
         model = XRayEdgeSolver(PP, AP)
         times = np.linspace(-20.0, 19.0, 10)

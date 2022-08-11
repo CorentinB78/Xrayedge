@@ -20,7 +20,10 @@ class XRayEdgeSolver:
         )
 
         self.correlator_solver = CorrelatorSolver(
-            QuantumDot(self.PP), [0], [self.PP.V_cap], self.AP
+            QuantumDot(self.PP, self.AP.nr_freqs_res, self.AP.w_max_res),
+            self.PP.orbitals,
+            self.PP.couplings,
+            self.AP,
         )
 
     def weight(self, Q_up, Q_dn):

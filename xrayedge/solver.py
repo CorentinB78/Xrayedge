@@ -33,7 +33,8 @@ class PhysicsParameters(Parameters):
         self,
         beta=1.0,
         bias_res=0.0,
-        V_cap=1.0,
+        orbitals=[0],
+        couplings=[1.0],
         eps_sys=0.0,
         eps_res=0.0,
         mu_res=0.0,
@@ -43,7 +44,8 @@ class PhysicsParameters(Parameters):
     ):
         self.beta = beta
         self.bias_res = bias_res
-        self.V_cap = V_cap
+        self.orbitals = orbitals
+        self.couplings = couplings
         self.eps_sys = eps_sys
         self.eps_res = eps_res
         self.mu_res = mu_res
@@ -74,6 +76,8 @@ class AccuracyParameters(Parameters):
         tol_gmres=1e-10,
         atol_gmres=1e-10,
         qdyson_max_N=int(1e8),
+        nr_freqs_res=int(1e4),
+        w_max_res=100.0,
     ):
         self.time_extrapolate = time_extrapolate
         self.tol_C = tol_C
@@ -83,6 +87,8 @@ class AccuracyParameters(Parameters):
         self.tol_gmres = tol_gmres
         self.atol_gmres = atol_gmres
         self.qdyson_max_N = qdyson_max_N
+        self.nr_freqs_res = nr_freqs_res
+        self.w_max_res = w_max_res
 
 
 def gen_params(accuracy_params, gmres=False):

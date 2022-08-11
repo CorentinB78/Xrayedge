@@ -9,7 +9,9 @@ class TestCorrelatorSolver(unittest.TestCase):
     def test_no_coupling(self):
         PP = xray.PhysicsParameters()
         AP = xray.AccuracyParameters(PP, 1.0)
-        solver = xray.CorrelatorSolver(xray.QuantumDot(PP), [0], [1e-4], AP)
+        solver = xray.CorrelatorSolver(
+            xray.QuantumDot(PP, int(1e4), 100.0), [0], [1e-4], AP
+        )
         Q = 0
 
         times = np.linspace(0.0, 10.0, 4)
@@ -25,10 +27,14 @@ class TestCorrelatorSolver(unittest.TestCase):
 
     def test_cheb_vs_trapz(self):
         PP = xray.PhysicsParameters()
+        PP.orbitals = [0]
+        PP.couplings = [1.5]
         AP = xray.AccuracyParameters(10.0)
         AP.qdyson_rtol = 1e-2
 
-        solver = xray.CorrelatorSolver(xray.QuantumDot(PP), [0], [1.5], AP)
+        solver = xray.CorrelatorSolver(
+            xray.QuantumDot(PP, int(1e4), 100.0), PP.orbitals, PP.couplings, AP
+        )
         times = np.linspace(0.0, 10.0, 20)
         Q = 0
 
@@ -46,7 +52,7 @@ class TestCorrelatorSolver(unittest.TestCase):
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
         PP.bias_res = 0.0
-        PP.V_cap = 1.0
+        PP.couplings = [1.0]
         PP.eps_res = 0.0
         PP.eps_sys = 0.0
         PP.Gamma = 1.0
@@ -56,7 +62,9 @@ class TestCorrelatorSolver(unittest.TestCase):
         AP.method = "trapz"
         AP.tol_C = (1e-2,)
 
-        solver = xray.CorrelatorSolver(xray.QuantumDot(PP), [0], [PP.V_cap], AP)
+        solver = xray.CorrelatorSolver(
+            xray.QuantumDot(PP, int(1e4), 100.0), [0], PP.couplings, AP
+        )
         times = np.linspace(0.0, 10.0, 11)
         C = solver.C(0, 0, times)
 
@@ -84,7 +92,7 @@ class TestAPlusReta(unittest.TestCase):
 
         PP = xray.PhysicsParameters()
         PP.beta = 1.0
-        PP.V_cap = 1.0
+        PP.couplings = [1.0]
         PP.bias_res = 0.0
         PP.eps_res = 0.0
         PP.D_res = 3.0
@@ -94,7 +102,9 @@ class TestAPlusReta(unittest.TestCase):
         AP.method = "trapz"
         AP.nr_samples_fft = int(1e6)
 
-        CS = xray.CorrelatorSolver(xray.QuantumDot(PP), [0], [PP.V_cap], AP)
+        CS = xray.CorrelatorSolver(
+            xray.QuantumDot(PP, int(1e4), 100.0), [0], PP.couplings, AP
+        )
 
         freqs, A_reta_w, en_shift = CS.A_plus_reta_w(0, 10000)
 
@@ -120,7 +130,7 @@ class TestCompareWithAnalytic(unittest.TestCase):
 
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
-        PP.V_cap = 1.0
+        PP.couplings = [1.0]
         PP.bias_res = 0.0
         PP.eps_res = 0.0
         PP.D_res = 3.0
@@ -130,15 +140,17 @@ class TestCompareWithAnalytic(unittest.TestCase):
         AP.method = "trapz"
         AP.nr_samples_fft = int(1e6)
 
-        CS = xray.CorrelatorSolver(xray.QuantumDot(PP), [0], [PP.V_cap], AP)
+        CS = xray.CorrelatorSolver(
+            xray.QuantumDot(PP, int(1e4), 100.0), [0], PP.couplings, AP
+        )
         tt = np.linspace(0, 100, 1000)
         C_vals = CS.C(0, 0, tt)
         slope_real = (C_vals[-1].real - C_vals[-2].real) / (tt[-1] - tt[-2])
 
         v_fermi = -1.0 / CS.reservoir.g_reta(np.asarray([0.0]), Q=0)[0].imag
-        slope_real_ref = -np.arctan(PP.V_cap / v_fermi) ** 2 / (PP.beta * np.pi)
+        slope_real_ref = -np.arctan(PP.couplings[0] / v_fermi) ** 2 / (PP.beta * np.pi)
 
-        self.assertAlmostEqual(slope_real, slope_real_ref, 2)
+        np.testing.assert_allclose(slope_real, slope_real_ref, 1e-2)
 
 
 class TestRenormalizedEnergies(unittest.TestCase):
@@ -157,7 +169,7 @@ class TestRenormalizedEnergies(unittest.TestCase):
         """
         PP = xray.PhysicsParameters()
         PP.beta = 10.0
-        PP.V_cap = 0.1
+        PP.couplings = [0.1]
         PP.bias_res = 0.0
         PP.eps_res = 0.0
         PP.D_res = 3.0
@@ -167,23 +179,25 @@ class TestRenormalizedEnergies(unittest.TestCase):
         AP.method = "trapz"
         AP.nr_samples_fft = int(1e6)
 
-        CS = xray.CorrelatorSolver(xray.QuantumDot(PP), [0], [PP.V_cap], AP)
+        CS = xray.CorrelatorSolver(
+            xray.QuantumDot(PP, int(1e4), 100.0), [0], PP.couplings, AP
+        )
         res = CS.reservoir
         tt = np.linspace(0, 100, 1000)
 
         # Q=0, empty QD
-        n_QPC = res.occupation(Q=0.0)
+        n_QPC = res.occupation(Q=0.0)[0]
 
         C_vals = CS.C(0, 0, tt)
         slope_imag = (C_vals[-1].imag - C_vals[-2].imag) / (tt[-1] - tt[-2])
-        self.assertAlmostEqual(slope_imag, -n_QPC * PP.V_cap, 2)
+        self.assertAlmostEqual(slope_imag, -n_QPC * PP.couplings[0], 2)
 
         # Q=1, full spinless QD
-        n_QPC = res.occupation(Q=1.0)
+        n_QPC = res.occupation(Q=1.0)[0]
 
         C_vals = CS.C(1, 1, tt)
         slope_imag = (C_vals[-1].imag - C_vals[-2].imag) / (tt[-1] - tt[-2])
-        self.assertAlmostEqual(slope_imag, n_QPC * PP.V_cap, 2)
+        self.assertAlmostEqual(slope_imag, n_QPC * PP.couplings[0], 2)
 
 
 if __name__ == "__main__":
