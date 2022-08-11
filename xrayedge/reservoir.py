@@ -129,7 +129,10 @@ class OneDChainBetweenTwoLeads(Reservoir):
             couplings[orb] = V
 
         mat = np.empty((len(w_array), N, N), dtype=complex)
-        mat[...] = w_array[:, None, None] - self.PP.hamiltonian_res[None, :, :]
+        mat[...] = (
+            w_array[:, None, None] * np.eye(N)[None, :, :]
+            - self.PP.hamiltonian_res[None, :, :]
+        )
         mat[...] -= Q * np.diag(couplings)[None, :, :]
         mat[:, 0, 0] -= self.delta_leads_R_left(w_array)
         mat[:, -1, -1] -= self.delta_leads_R_right(w_array)
