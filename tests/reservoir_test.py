@@ -5,6 +5,7 @@ from xrayedge import PhysicsParameters
 from xrayedge import reservoir
 import toolbox as tb
 import matplotlib.pyplot as plt
+from scipy import integrate
 
 
 class TestQuantumDotFrequencyDomain(unittest.TestCase):
@@ -128,6 +129,34 @@ class TestQPCFrequencyDomainEta(unittest.TestCase):
 
         testing.assert_allclose(gf_0, gf_1, atol=1e-4)
         testing.assert_allclose(gf_0, gf_2, atol=1e-4)
+
+
+class TestExtendedQPC(unittest.TestCase):
+    def test(self):
+        PP = PhysicsParameters()
+        PP.D_res = 5.0
+        PP.mu_res = 5.0
+        PP.eta_res = 0.0
+        PP.beta = 1.0
+
+        N = 11
+        PP.eps_res = np.zeros(N)
+        PP.orbitals = [3, 4, 5, 6]
+        PP.couplings = [0.5, 1.0, 1.0, 0.5]
+
+        qpc = reservoir.ExtendedQPC(PP, int(1e4), 100.0)
+
+        w = np.linspace(-10, 10, int(1e5))
+        gr = qpc.g_reta(w, Q=0)
+        ga = np.conj(gr).swapaxes(1, 2)
+        norm = integrate.simpson(x=w, y=gr - ga, axis=0)
+        testing.assert_allclose(norm, -2j * np.pi * np.eye(N), atol=1e-2)
+
+        print(qpc.occupation(Q=0))
+
+        # plt.plot(qpc.occupation(Q=0))
+        # plt.plot(qpc.occupation(Q=1), "--")
+        # plt.show()
 
 
 if __name__ == "__main__":

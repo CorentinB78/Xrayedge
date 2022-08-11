@@ -299,3 +299,49 @@ class QPC(OneDChainBetweenTwoLeads):
         t = self.PP.D_res / 2.0  # hopping
         sc_gf = tb.semicirc_retarded_gf(t)
         return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
+
+
+class ExtendedQPC(OneDChainBetweenTwoLeads):
+    def __init__(self, physics_params, nr_samples_fft, w_max):
+        """
+        Arguments:
+            physics_params -- an object with parameters `D_res`, `eps_res`, `mu_res`, `eta_res`, `bias_res`, `beta`, `couplings` and `orbitals`.
+
+        Keyword Arguments:
+            nr_samples_fft -- number of grid points for FFT
+            w_max -- max frequency for FFT
+        """
+        PP = copy(physics_params)
+        N = len(PP.eps_res)
+        assert len(PP.couplings) <= N
+        H = np.zeros((N, N), dtype=complex)
+
+        for i in range(N):
+            H[i, i] = PP.eps_res[i] + PP.D_res - PP.mu_res - PP.eta_res * 1j
+
+        t = PP.D_res / 2.0  # hopping
+        for i in range(N - 1):
+            H[i, i + 1] = -t
+            H[i + 1, i] = -t
+
+        PP.hamiltonian_res = H
+        del PP.eps_res
+        super().__init__(PP, nr_samples_fft, w_max)
+
+    def delta_leads_R_left(self, w_array):
+        """
+        Retarded hybridization function in frequencies for left lead.
+        """
+        w_array = np.atleast_1d(w_array)
+        t = self.PP.D_res / 2.0  # hopping
+        sc_gf = tb.semicirc_retarded_gf(t)
+        return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
+
+    def delta_leads_R_right(self, w_array):
+        """
+        Retarded hybridization function in frequencies for right lead.
+        """
+        w_array = np.atleast_1d(w_array)
+        t = self.PP.D_res / 2.0  # hopping
+        sc_gf = tb.semicirc_retarded_gf(t)
+        return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
