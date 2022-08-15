@@ -3,8 +3,7 @@ from scipy import interpolate, integrate
 from matplotlib import pyplot as plt
 from copy import copy
 import toolbox as tb
-from ..solver import PhysicsParameters, AccuracyParameters, CorrelatorSolver
-from ..reservoir import QPC
+from ..solver import CorrelatorSolver
 import bisect
 
 # TODO: test energy shifts
@@ -12,21 +11,15 @@ import bisect
 
 class XrayForNCASolver:
     """
-    Solver for computing Pseudo-particle Green functions of an Anderson impurity capacitively coupled to a QPC.
+    Solver for computing Pseudo-particle Green functions of an Anderson impurity capacitively coupled to a reservoir.
     """
 
-    def __init__(self, physics_params=None, accuracy_params=None):
-        self.PP = (
-            copy(physics_params) if physics_params is not None else PhysicsParameters()
-        )
-        self.AP = (
-            copy(accuracy_params)
-            if accuracy_params is not None
-            else AccuracyParameters(1.0)
-        )
+    def __init__(self, reservoir, physics_params, accuracy_params):
+        self.PP = copy(physics_params)
+        self.AP = copy(accuracy_params)
 
         self.correlator_solver = CorrelatorSolver(
-            QPC(self.PP, self.AP.nr_freqs_res, self.AP.w_max_res),
+            reservoir,
             self.PP.orbitals,
             self.PP.couplings,
             self.AP,
