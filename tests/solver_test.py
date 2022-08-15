@@ -3,6 +3,7 @@ import numpy as np
 from numpy import testing
 import xrayedge as xray
 import toolbox as tb
+from copy import copy
 
 
 class TestCorrelatorSolver(unittest.TestCase):
@@ -198,6 +199,41 @@ class TestRenormalizedEnergies(unittest.TestCase):
         C_vals = CS.C(1, 1, tt)
         slope_imag = (C_vals[-1].imag - C_vals[-2].imag) / (tt[-1] - tt[-2])
         self.assertAlmostEqual(slope_imag, n_QPC * PP.couplings[0], 2)
+
+
+class TestInvarianceTranslation(unittest.TestCase):
+    def test(self):
+        PP = xray.Parameters()
+        PP.beta = 10.0
+        PP.bias_res = 0.0
+        PP.D_res = 10.0
+        PP.eta_res = 0.0
+        PP.mu_res = 0.4
+        PP.eps_res = [0.0, 0.0, 0.0]
+        PP.orbitals = [0]
+        PP.couplings = [0.1]
+
+        AP = xray.AccuracyParameters(
+            time_extrapolate=20.0, tol_C=1e-4, qdyson_rtol=1e-6
+        )
+
+        qpc1 = xray.ExtendedQPC(copy(PP), int(1e4), 100.0)
+
+        PP.orbitals = [1]
+        qpc2 = xray.ExtendedQPC(copy(PP), int(1e4), 100.0)
+
+        S1 = xray.CorrelatorSolver(
+            qpc1, qpc1.PP.orbitals, qpc1.PP.couplings, AP, verbose=True
+        )
+        S2 = xray.CorrelatorSolver(
+            qpc2, qpc2.PP.orbitals, qpc2.PP.couplings, AP, verbose=True
+        )
+
+        times = np.linspace(0, 40, 100)
+        cvals1 = S1.C(0, 0, times)
+        cvals2 = S2.C(0, 0, times)
+
+        testing.assert_allclose(cvals1, cvals2)
 
 
 if __name__ == "__main__":

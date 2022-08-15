@@ -225,7 +225,7 @@ def solve_quasi_dyson(
 
         vec_b = np.empty(N * nr_orb, dtype=complex)
         for j, orb_a in enumerate(orbitals):
-            vec_b[j * N : (j + 1) * N] = g_less(j, orb)(t_array - t)
+            vec_b[j * N : (j + 1) * N] = g_less(orb_a, orb)(t_array - t)
 
         if method == "trapz-LU":
             mat_M = mat_M.to_array()
