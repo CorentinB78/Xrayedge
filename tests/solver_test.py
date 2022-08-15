@@ -234,7 +234,7 @@ class TestInvarianceTranslation(unittest.TestCase):
         cvals1 = S1.C(0, 0, times)
         cvals2 = S2.C(0, 0, times)
 
-        testing.assert_allclose(cvals1, cvals2, rtol=1e-4)
+        testing.assert_allclose(cvals1, cvals2, rtol=1e-7)
 
 
 if __name__ == "__main__":

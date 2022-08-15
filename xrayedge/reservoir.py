@@ -133,7 +133,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
 
     def delta_grea_center(self, w_array):
         w_array = np.atleast_1d(w_array)
-        return 2j * self.PP.eta_res * tb.fermi(w_array, 0.0, -self.PP.beta)
+        return -2j * self.PP.eta_res * tb.fermi(w_array, 0.0, -self.PP.beta)
 
     def g_reta(self, w_array, Q):
         """
