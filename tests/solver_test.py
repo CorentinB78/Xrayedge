@@ -55,6 +55,7 @@ class TestCorrelatorSolver(unittest.TestCase):
         PP.bias_res = 0.0
         PP.couplings = [1.0]
         PP.eps_res = 0.0
+        PP.eta_res = 0.0
         PP.eps_sys = 0.0
         PP.Gamma = 1.0
         PP.U = 0.0
@@ -207,7 +208,7 @@ class TestInvarianceTranslation(unittest.TestCase):
         PP.beta = 10.0
         PP.bias_res = 0.0
         PP.D_res = 10.0
-        PP.eta_res = 0.0
+        PP.eta_res = 0.1
         PP.mu_res = 0.4
         PP.eps_res = [0.0, 0.0, 0.0]
         PP.orbitals = [0]
@@ -233,7 +234,7 @@ class TestInvarianceTranslation(unittest.TestCase):
         cvals1 = S1.C(0, 0, times)
         cvals2 = S2.C(0, 0, times)
 
-        testing.assert_allclose(cvals1, cvals2)
+        testing.assert_allclose(cvals1, cvals2, rtol=1e-4)
 
 
 if __name__ == "__main__":

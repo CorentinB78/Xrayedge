@@ -76,7 +76,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
     def __init__(self, physics_params, nr_samples_fft, w_max, verbose=False):
         """
         Arguments:
-            physics_params -- anobject containing parameters 'beta', 'bias_res', 'hamiltonian_res', 'orbitals', 'couplings'.
+            physics_params -- an object containing parameters 'beta', 'bias_res', 'hamiltonian_res', 'orbitals', 'couplings' and 'eta_res'.
 
         Keyword Arguments:
             nr_samples_fft -- number of points for FFT
@@ -127,6 +127,14 @@ class OneDChainBetweenTwoLeads(Reservoir):
             * np.imag(self.delta_leads_R_right(w_array))
         )
 
+    def delta_less_center(self, w_array):
+        w_array = np.atleast_1d(w_array)
+        return 2j * self.PP.eta_res * tb.fermi(w_array, 0.0, self.PP.beta)
+
+    def delta_grea_center(self, w_array):
+        w_array = np.atleast_1d(w_array)
+        return 2j * self.PP.eta_res * tb.fermi(w_array, 0.0, -self.PP.beta)
+
     def g_reta(self, w_array, Q):
         """
         Retarded GF in frequencies.
@@ -141,7 +149,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
 
         mat = np.empty((len(w_array), N, N), dtype=complex)
         mat[...] = (
-            w_array[:, None, None] * np.eye(N)[None, :, :]
+            np.eye(N)[None, :, :] * (w_array + 1.0j * self.PP.eta_res)[:, None, None]
             - self.PP.hamiltonian_res[None, :, :]
         )
         mat[...] -= Q * np.diag(couplings)[None, :, :]
@@ -165,12 +173,14 @@ class OneDChainBetweenTwoLeads(Reservoir):
             self.delta_leads_R_left(w_array)[:, None, None]
         )
 
+        center = np.matmul(GR, GA) * self.delta_less_center(w_array)[:, None, None]
+
         right = GR[:, :, -1:] * GA[:, -1:, :]
         right *= 0.5 * self.delta_leads_K_right(w_array)[:, None, None] - 1j * np.imag(
             self.delta_leads_R_right(w_array)[:, None, None]
         )
 
-        return left + right
+        return left + center + right
 
     def g_grea(self, w_array, Q):
         """
@@ -187,12 +197,14 @@ class OneDChainBetweenTwoLeads(Reservoir):
             self.delta_leads_R_left(w_array)[:, None, None]
         )
 
+        center = np.matmul(GR, GA) * self.delta_grea_center(w_array)[:, None, None]
+
         right = GR[:, :, -1:] * GA[:, -1:, :]
         right *= 0.5 * self.delta_leads_K_right(w_array)[:, None, None] + 1j * np.imag(
             self.delta_leads_R_right(w_array)[:, None, None]
         )
 
-        return left + right
+        return left + center + right
 
     @lru_cache
     def g_less_t(self, Q):
@@ -257,7 +269,7 @@ class QuantumDot(OneDChainBetweenTwoLeads):
     def __init__(self, physics_params, nr_samples_fft, w_max):
         """
         Arguments:
-            physics_params -- an object with parameters `D_res`, `eps_res`, `bias_res`, `beta`, `orbitals` and `couplings`.
+            physics_params -- an object with parameters `D_res`, `eps_res`, `bias_res`, `beta`, `orbitals`, `couplings` and `eta_res`.
 
         Keyword Arguments:
             nr_samples_fft -- number of grid points for FFT (default: {None} which auto determine an optimal value)
@@ -300,9 +312,7 @@ class QPC(OneDChainBetweenTwoLeads):
             w_max -- max frequency for FFT
         """
         PP = copy(physics_params)
-        PP.hamiltonian_res = np.array(
-            [[PP.eps_res + PP.D_res - PP.mu_res - PP.eta_res * 1j]]
-        )
+        PP.hamiltonian_res = np.array([[PP.eps_res + PP.D_res - PP.mu_res]])
         del PP.eps_res
         super().__init__(PP, nr_samples_fft, w_max)
 
@@ -340,7 +350,7 @@ class ExtendedQPC(OneDChainBetweenTwoLeads):
         H = np.zeros((N, N), dtype=complex)
 
         for i in range(N):
-            H[i, i] = PP.eps_res[i] + PP.D_res - PP.mu_res - PP.eta_res * 1j
+            H[i, i] = PP.eps_res[i] + PP.D_res - PP.mu_res
 
         t = PP.D_res / 2.0  # hopping
         for i in range(N - 1):

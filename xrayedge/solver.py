@@ -39,7 +39,7 @@ class PhysicsParameters(Parameters):
         eps_res=0.0,
         mu_res=0.0,
         D_res=1.0,
-        eta_res=0.01,
+        eta_res=0.0,
         U=0.0,
     ):
         self.beta = beta

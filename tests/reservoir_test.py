@@ -17,6 +17,7 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
         PP.bias_res = 0.5
         PP.orbitals = [0]
         PP.couplings = [1.2]
+        PP.eta_res = 0.0
         res = reservoir.QuantumDot(PP, int(1e4), 100.0)
 
         self.PP = PP
