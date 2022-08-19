@@ -203,7 +203,7 @@ class GFWithTails:
     def __call__(self, omega):
         return self._vec_call(omega)
 
-    def plot(self, omegas, real_part=False, inverse=False):
+    def plot(self, omegas, filename=None, real_part=False, inverse=False):
         x = omegas
         f = self(x + self._en_shift)  # unshift first
 
@@ -242,6 +242,8 @@ class GFWithTails:
         plt.axvline(self._imag_bounds[0], c="k", ls=":", alpha=0.4)
         plt.axvline(self._imag_bounds[1], c="k", ls=":", alpha=0.4)
 
+        if filename is not None:
+            plt.savefig(filename)
         plt.show()
 
         ### plot inverse
