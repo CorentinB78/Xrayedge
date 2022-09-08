@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import linalg
 from scipy.sparse.linalg import gmres, LinearOperator
+from scipy import interpolate
 import os
 
 
@@ -78,6 +79,22 @@ def cheb_points(n, a=-1.0, b=1.0):
     assert n > 1
     assert b > a
     return (1.0 - np.cos((np.pi * np.arange(n)) / (n - 1))) * ((b - a) / 2.0) + a
+
+
+class cpx_interp1d:
+    """
+    scipy.interpolate.interp1d for complex numbers.
+    """
+
+    def __init__(self, x, y, **kwargs) -> None:
+        """
+        scipy.interpolate.interp1d for complex numbers.
+        """
+        self.real_interp1d = interpolate.interp1d(x, np.real(y), **kwargs)
+        self.imag_interp1d = interpolate.interp1d(x, np.imag(y), **kwargs)
+
+    def __call__(self, x):
+        return self.real_interp1d(x) + 1j * self.imag_interp1d(x)
 
 
 ### Quasi-Dyson equation solver
@@ -255,7 +272,7 @@ def solve_quasi_dyson(
     raise ValueError(f'Method "{method}" not found.')
 
 
-def solve_quasi_dyson_last_time(
+def solve_quasi_dyson_adapt(
     g_less,
     g_grea,
     t,
@@ -279,7 +296,9 @@ def solve_quasi_dyson_last_time(
 
     with g(x) = \theta(x) g^>(x) + \theta(-x) g^<(x)
 
-    and returns f(t).
+    and returns f.
+
+    TODO: update equation above
 
     Arguments:
         g_less -- vectorized callable for g^<
@@ -297,7 +316,9 @@ def solve_quasi_dyson_last_time(
         guess -- list of function, one for each orbital
 
     Returns:
-        (value, error, final number of samples)
+        f -- callable t -> 1D array
+        abs_err -- float, estimated absolute error
+        N -- int, number of samples used
     """
     orbitals = np.asarray(orbitals)
     couplings = np.asarray(couplings)
@@ -312,7 +333,7 @@ def solve_quasi_dyson_last_time(
     if tol_gmres > rtol:
         print("/!\ [Quasi Dyson] tol_gmres is larger than rtol!")
 
-    _, f_vals = solve_quasi_dyson(
+    times, f_vals = solve_quasi_dyson(
         g_less,
         g_grea,
         t,
@@ -325,8 +346,8 @@ def solve_quasi_dyson_last_time(
         tol_gmres=tol_gmres,
         atol_gmres=atol_gmres,
     )
-    orb_idx = np.argwhere(orbitals == orb)[0][0]
-    f = f_vals[orb_idx, -1]
+    f = cpx_interp1d(times, f_vals, axis=1, kind="linear", fill_value="extrapolate")
+    err_times = times
 
     while True:
 
@@ -336,7 +357,7 @@ def solve_quasi_dyson_last_time(
 
         N *= 2
 
-        _, f_vals = solve_quasi_dyson(
+        times, f_vals = solve_quasi_dyson(
             g_less,
             g_grea,
             t,
@@ -349,18 +370,25 @@ def solve_quasi_dyson_last_time(
             tol_gmres=tol_gmres,
             atol_gmres=atol_gmres,
         )
-        new_f = f_vals[orb_idx, -1]
+        new_f = cpx_interp1d(
+            times, f_vals, axis=1, kind="linear", fill_value="extrapolate"
+        )
 
-        err = abs(f - new_f)
+        f_vals = new_f(err_times)
+        err = np.abs(f(err_times) - f_vals)
+        abs_err = np.max(err)
+        rel_err = np.max(err / np.abs(f_vals))
+
         f = new_f
+        err_times = times
 
         if verbose:
-            print(f"{N}: \t val={f}, \t err={err}")
+            print(f"{N}: \t abs_err={abs_err}, \t rel err={rel_err}")
 
-        if err < atol or err < abs(f) * rtol:
+        if abs_err < atol or rel_err < rtol:
             break
 
-    return f, err, N
+    return f, abs_err, N
 
 
 ### Cumulated adaptative integral

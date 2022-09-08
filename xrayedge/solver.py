@@ -3,7 +3,7 @@ from scipy import interpolate
 import toolbox as tb
 from copy import copy
 import bisect
-from .integral_solvers import solve_quasi_dyson_last_time, cum_int_adapt_simpson
+from .integral_solvers import solve_quasi_dyson_adapt, cum_int_adapt_simpson
 
 # TODO parallelize?
 # TODO cleanup notes!
@@ -292,7 +292,7 @@ class CorrelatorSolver:
 
         for orb, coupling in zip(self.orbitals, self.capacitive_couplings):
 
-            phi_t, err, N = solve_quasi_dyson_last_time(
+            phi_fun, err, N = solve_quasi_dyson_adapt(
                 self.reservoir.g_less_t_fun(Q),
                 self.reservoir.g_grea_t_fun(Q),
                 t,
@@ -307,6 +307,10 @@ class CorrelatorSolver:
                 atol_gmres=self.AP.atol_gmres,
                 max_N=self.AP.qdyson_max_N,
             )
+
+            orb_idx = np.argwhere(self.orbitals == orb)[0][0]
+            phi_t = phi_fun(t)[orb_idx]
+
             N_max = max(N_max, N)
 
             out += coupling * phi_t

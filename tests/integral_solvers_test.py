@@ -7,7 +7,7 @@ from xrayedge.integral_solvers import (
     QuasiToeplitzMatrix,
     BlockLinearOperator,
     solve_quasi_dyson,
-    solve_quasi_dyson_last_time,
+    solve_quasi_dyson_adapt,
 )
 
 
@@ -202,7 +202,7 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         V = 2.0
         t = 3.0
 
-        phi_t, err, N = solve_quasi_dyson_last_time(
+        phi_fun, err, N = solve_quasi_dyson_adapt(
             lambda a, b: np.sin,
             lambda a, b: np.cos,
             t,
@@ -214,7 +214,11 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
             method="trapz",
             verbose=False,
         )
-        np.testing.assert_allclose(phi_t, self.solution_ref(t), atol=1e-3)
+
+        times = np.linspace(0, t, 100)
+        np.testing.assert_allclose(
+            phi_fun(times)[0], self.solution_ref(times), atol=1e-3
+        )
 
     def test_trapz(self):
         V = 2.0

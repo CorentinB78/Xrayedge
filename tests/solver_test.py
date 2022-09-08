@@ -24,13 +24,13 @@ class TestCorrelatorSolver(unittest.TestCase):
 
         # print(phi - 1e-4 * g_less[idx])
 
-        np.testing.assert_allclose(phi, 1e-4 * g_less[idx], rtol=1e-20, atol=1e-20)
+        np.testing.assert_allclose(phi, 1e-4 * g_less[idx], rtol=1e-15, atol=1e-15)
 
     def test_cheb_vs_trapz(self):
         PP = xray.PhysicsParameters()
         PP.orbitals = [0]
         PP.couplings = [1.5]
-        AP = xray.AccuracyParameters(10.0)
+        AP = xray.AccuracyParameters(5.0)
         AP.qdyson_rtol = 1e-2
 
         solver = xray.CorrelatorSolver(
