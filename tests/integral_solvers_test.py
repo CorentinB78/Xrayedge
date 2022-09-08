@@ -268,7 +268,7 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
             [0],
             [V],
             N,
-            guess=[self.solution_ref],
+            guess=lambda u: np.array([self.solution_ref(u)]),
             method="trapz-GMRES",
         )
         np.testing.assert_allclose(phi[0], self.solution_ref(time), atol=1e-3)
