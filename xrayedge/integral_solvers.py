@@ -121,6 +121,7 @@ def solve_quasi_dyson(
     orbitals,
     couplings,
     N,
+    guess=None,
     method="trapz",
     tol_gmres=1e-10,
     atol_gmres=1e-10,
@@ -143,10 +144,12 @@ def solve_quasi_dyson(
         N -- number of grid points on which f is computed
 
     Keyword Arguments:
+        guess -- list of functions, one per orbital. Only for GMRES method.
         method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
 
     Returns:
-        (grid_pts, f_values) a pair of coordinates and corresponding values for f
+        grid_pts -- 1D array, time coordinates
+        f_values -- 2D array, values for f, shape (len(orbitals), N)
     """
     assert t > 0.0
     assert N > 1
@@ -232,7 +235,16 @@ def solve_quasi_dyson(
             return t_array, linalg.solve(mat_M, vec_b).reshape((nr_orb, N))
 
         elif method == "trapz-GMRES":
-            res, info = gmres(mat_M, vec_b, tol=tol_gmres, atol=atol_gmres)
+
+            guess_spl = None
+            if guess is not None:
+                guess_spl = np.empty_like(vec_b)
+                for j in orbitals:
+                    guess_spl[j * N : (j + 1) * N] = guess[j](t_array)
+
+            res, info = gmres(
+                mat_M, vec_b, x0=guess_spl, tol=tol_gmres, atol=atol_gmres
+            )
             if info > 0:
                 raise RuntimeError("/!\ GMRES did not converge.")
             elif info < 0:
@@ -254,6 +266,7 @@ def solve_quasi_dyson_last_time(
     atol,
     start_N=None,
     method="trapz",
+    guess=None,
     tol_gmres=1e-10,
     atol_gmres=1e-10,
     max_N=int(1e8),
@@ -281,6 +294,7 @@ def solve_quasi_dyson_last_time(
     Keyword Arguments:
         start_N -- int, starting resolution of discretization.
         method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
+        guess -- list of function, one for each orbital
 
     Returns:
         (value, error, final number of samples)
@@ -306,6 +320,7 @@ def solve_quasi_dyson_last_time(
         orbitals,
         couplings,
         N,
+        guess=guess,
         method=method,
         tol_gmres=tol_gmres,
         atol_gmres=atol_gmres,
@@ -329,6 +344,7 @@ def solve_quasi_dyson_last_time(
             orbitals,
             couplings,
             N,
+            guess=guess,
             method=method,
             tol_gmres=tol_gmres,
             atol_gmres=atol_gmres,

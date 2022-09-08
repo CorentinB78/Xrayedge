@@ -250,6 +250,25 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         )
         np.testing.assert_allclose(phi[0], self.solution_ref(time), atol=1e-3)
 
+    def test_trapz_guess(self):
+        V = 2.0
+        t = 3.0
+        N = 100
+        time = np.linspace(0, t, N)
+
+        time, phi = solve_quasi_dyson(
+            lambda a, b: np.sin,
+            lambda a, b: np.cos,
+            t,
+            0,
+            [0],
+            [V],
+            N,
+            guess=[self.solution_ref],
+            method="trapz-GMRES",
+        )
+        np.testing.assert_allclose(phi[0], self.solution_ref(time), atol=1e-3)
+
     def test_second_order_cheb(self):
         gl = lambda x: np.sin(1.5 * x) * np.exp(-((x - 1.0) ** 2) / 3.0)
         gg = lambda x: np.cos(x + 2.0) * np.exp(-((x + 0.5) ** 2) / 2.0)
