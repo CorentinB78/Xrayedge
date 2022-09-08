@@ -16,11 +16,11 @@ tmax = 10.0
 AP = xray.AccuracyParameters(
     time_extrapolate=tmax,
     tol_C=1e-3,
-    method="trapz",
+    method="trapz-GMRES",
 )
 
-qpc = xray.QPC(PP)
-solver = xray.CorrelatorSolver(qpc, [0], [PP.V_cap], AP)
+qpc = xray.QPC(PP, int(1e4), 100.0)
+solver = xray.CorrelatorSolver(qpc, PP.orbitals, PP.couplings, AP)
 
 start = time.time()
 start_full = time.process_time()
