@@ -161,7 +161,7 @@ def solve_quasi_dyson(
         N -- number of grid points on which f is computed
 
     Keyword Arguments:
-        guess -- list of functions, one per orbital. Only for GMRES method.
+        guess -- callable t -> 1D array. Only for GMRES method.
         method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
 
     Returns:
@@ -257,7 +257,7 @@ def solve_quasi_dyson(
             if guess is not None:
                 guess_spl = np.empty_like(vec_b)
                 for j in orbitals:
-                    guess_spl[j * N : (j + 1) * N] = guess[j](t_array)
+                    guess_spl[j * N : (j + 1) * N] = guess(t_array)[j, :]
 
             res, info = gmres(
                 mat_M, vec_b, x0=guess_spl, tol=tol_gmres, atol=atol_gmres
@@ -313,7 +313,7 @@ def solve_quasi_dyson_adapt(
     Keyword Arguments:
         start_N -- int, starting resolution of discretization.
         method -- one of "cheb", "trapz", "trapz-LU", "trapz-GMRES" (default: {"trapz"})
-        guess -- list of function, one for each orbital
+        guess -- callable t -> 1D array
 
     Returns:
         f -- callable t -> 1D array
@@ -346,7 +346,9 @@ def solve_quasi_dyson_adapt(
         tol_gmres=tol_gmres,
         atol_gmres=atol_gmres,
     )
-    f = cpx_interp1d(times, f_vals, axis=1, kind="linear", fill_value="extrapolate")
+    f = cpx_interp1d(
+        times, f_vals, axis=1, kind="linear", fill_value=0.0, bounds_error=False
+    )
     err_times = times
 
     while True:
@@ -371,13 +373,13 @@ def solve_quasi_dyson_adapt(
             atol_gmres=atol_gmres,
         )
         new_f = cpx_interp1d(
-            times, f_vals, axis=1, kind="linear", fill_value="extrapolate"
+            times, f_vals, axis=1, kind="linear", fill_value=0.0, bounds_error=False
         )
 
-        f_vals = new_f(err_times)
-        err = np.abs(f(err_times) - f_vals)
+        ff = new_f(err_times)
+        err = np.abs(f(err_times) - ff)
         abs_err = np.max(err)
-        rel_err = np.max(err / np.abs(f_vals))
+        rel_err = np.max(err / np.abs(ff))
 
         f = new_f
         err_times = times
