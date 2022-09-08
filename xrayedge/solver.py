@@ -71,7 +71,7 @@ class AccuracyParameters(Parameters):
         time_extrapolate,
         tol_C=1e-2,
         qdyson_rtol=1e-5,
-        qdyson_atol=1e-10,
+        qdyson_atol=1e-5,
         method="trapz",
         tol_gmres=1e-10,
         atol_gmres=1e-10,
