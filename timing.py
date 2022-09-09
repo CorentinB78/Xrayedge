@@ -27,7 +27,7 @@ start = time.time()
 start_full = time.process_time()
 
 # cProfile.run("model.compute_C(type=0, Q=0)")
-err = solver.compute_C(type=0, Q=0, ignore_cache=True)
+err = solver.compute_C(type=0, Q=0, force_recompute=True)
 
 full_run_time = time.process_time() - start_full
 run_time = time.time() - start

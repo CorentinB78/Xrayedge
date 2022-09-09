@@ -223,12 +223,12 @@ class CorrelatorSolver:
 
         return C_vals
 
-    def compute_C(self, type, Q, ignore_cache=False):
+    def compute_C(self, type, Q, force_recompute=False):
         """
         If value cannot be found in cache, does compute C, fills cache and returns error estimate.
         """
 
-        if (not ignore_cache) and (self._cache_C_interp[type][Q] is not None):
+        if (not force_recompute) and (self._cache_C_interp[type][Q] is not None):
             return None  # nothing to do
 
         if type == 0:
