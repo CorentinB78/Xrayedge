@@ -241,18 +241,13 @@ class CorrelatorSolver:
         self._cached_phi = []
         self._times = []
 
-        if self.verbose:
-            print("[Xray/CorrelatorSolver] Computing C...", flush=True)
-
         times, C_vals, err = cum_int_adapt_simpson(
             lambda t: self.phi(sign, Q, t, use_cache_N=True, cache_N=True),
             self.AP.time_extrapolate,
             tol=self.AP.tol_C,
+            verbose=self.verbose,
         )
         C_vals *= -sign
-
-        if self.verbose:
-            print("[Xray/CorrelatorSolver] ... Done.", flush=True)
 
         slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
         intercept = C_vals[-1] - slope * times[-1]

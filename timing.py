@@ -21,6 +21,7 @@ AP = xray.AccuracyParameters(
 
 qpc = xray.QPC(PP, int(1e4), 100.0)
 solver = xray.CorrelatorSolver(qpc, PP.orbitals, PP.couplings, AP)
+solver.verbose = True
 
 start = time.time()
 start_full = time.process_time()

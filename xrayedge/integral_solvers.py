@@ -392,7 +392,7 @@ def solve_quasi_dyson_adapt(
 ### Cumulated adaptative integral
 
 
-def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000):
+def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000, verbose=False):
     """
     Adaptative simpson cumulative integral (antiderivative) of `f`, starting from x=0 toward x > 0.
 
@@ -407,6 +407,13 @@ def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000):
     Returns:
         (coordinates, antiderivative, error) -- three 1D arrays
     """
+
+    if verbose:
+        print(
+            "Simpson progress (out of 100): - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - |",
+            flush=True,
+        )
+        progress = 0
 
     a = 0.0
     b = xmax
@@ -445,6 +452,10 @@ def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000):
         err = max(np.abs(int1 - int1_estimate), np.abs(int2 - int2_estimate))
 
         if err < tol:
+            if verbose:
+                new_progress = round(x[i + 4] / xmax * 100)
+                print("|" * (new_progress - progress), end="", flush=True)
+                progress = new_progress
             i += 4  # go to next segment
         # else keep working on this segment
 
@@ -463,5 +474,8 @@ def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000):
     cumint_2 = np.cumsum(cumint_2)
     err = np.abs(cumint[2::2] - cumint_2)
     # x_err = x[4::4]
+
+    if verbose:
+        print()
 
     return x_cumint, cumint, max(err)
