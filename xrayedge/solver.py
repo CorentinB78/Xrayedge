@@ -332,6 +332,10 @@ class CorrelatorSolver:
 
         return out
 
+    def empty_qdyson_cache(self):
+        self._times = []
+        self._cached_phi = []
+
     ### getters ###
     def get_tail(self, type, Q):
         tail = self._cache_C_tail[type][Q]
