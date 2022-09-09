@@ -313,7 +313,7 @@ class CorrelatorSolver:
                 self.AP.qdyson_rtol,
                 self.AP.qdyson_atol,
                 start_N=start_N,
-                guess=None,
+                guess=guess,
                 method=self.AP.method,
                 tol_gmres=self.AP.tol_gmres,
                 atol_gmres=self.AP.atol_gmres,

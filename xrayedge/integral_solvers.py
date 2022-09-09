@@ -256,7 +256,7 @@ def solve_quasi_dyson(
             guess_spl = None
             if guess is not None:
                 guess_spl = np.empty_like(vec_b)
-                for j in orbitals:
+                for j in range(len(orbitals)):
                     guess_spl[j * N : (j + 1) * N] = guess(t_array)[j, :]
 
             res, info = gmres(
@@ -346,9 +346,7 @@ def solve_quasi_dyson_adapt(
         tol_gmres=tol_gmres,
         atol_gmres=atol_gmres,
     )
-    f = cpx_interp1d(
-        times, f_vals, axis=1, kind="linear", fill_value=0.0, bounds_error=False
-    )
+    f = cpx_interp1d(times, f_vals, axis=1, kind="linear")
     err_times = times
 
     while True:
@@ -372,9 +370,7 @@ def solve_quasi_dyson_adapt(
             tol_gmres=tol_gmres,
             atol_gmres=atol_gmres,
         )
-        new_f = cpx_interp1d(
-            times, f_vals, axis=1, kind="linear", fill_value=0.0, bounds_error=False
-        )
+        new_f = cpx_interp1d(times, f_vals, axis=1, kind="linear")
 
         ff = new_f(err_times)
         err = np.abs(f(err_times) - ff)
