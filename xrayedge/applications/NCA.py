@@ -203,11 +203,22 @@ class GFWithTails:
     def __call__(self, omega):
         return self._vec_call(omega)
 
-    def plot(self, omegas, filename=None, real_part=False, inverse=False):
-        x = omegas
+    def plot(self, omegas=None, filename=None, real_part=False, inverse=False):
+        if omegas is None:
+            x = np.linspace(
+                -2 * abs(self._imag_bounds[0]), 2 * abs(self._imag_bounds[1]), 1000
+            )
+        else:
+            x = omegas
+
         f = self(x + self._en_shift)  # unshift first
 
-        x0, f0 = tb.vcut(self._omegas, self._gf_vals, -2 * abs(x[0]), 2 * abs(x[-1]))
+        x0, f0 = tb.vcut(
+            self._omegas,
+            self._gf_vals,
+            -2 * abs(self._imag_bounds[0]),
+            2 * abs(self._imag_bounds[1]),
+        )
 
         # real part
         if real_part:
@@ -231,16 +242,18 @@ class GFWithTails:
             plt.show()
 
         # imag part
-        plt.plot(x0, -f0.imag)
+        plt.plot(x0, -f0.imag, label="original data")
         # plt.xlim(*plt.xlim())  # freeze xlim
         plt.semilogy()
         # tb.autoscale_y(logscale=True)
 
-        plt.plot(x, -f.imag, "--")
+        plt.plot(x, -f.imag, "--", label="extrapolation")
 
         plt.axhline(self._tol, c="k", ls=":", alpha=0.4)
         plt.axvline(self._imag_bounds[0], c="k", ls=":", alpha=0.4)
         plt.axvline(self._imag_bounds[1], c="k", ls=":", alpha=0.4)
+
+        plt.legend()
 
         if filename is not None:
             plt.savefig(filename)
