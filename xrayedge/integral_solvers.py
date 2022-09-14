@@ -324,7 +324,7 @@ def solve_quasi_dyson_adapt(
     couplings = np.asarray(couplings)
 
     if start_N is None:
-        N = 10
+        N = 16  # power of 2
     else:
         N = start_N
 
