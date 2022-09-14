@@ -10,6 +10,9 @@ import cProfile
 
 
 PP = xray.PhysicsParameters()
+PP.eps_res = [0.0, 0.0, 0.0]
+PP.orbitals = [0, 1, 2]
+PP.couplings = [1.0, 0.5, -0.7]
 
 tmax = 10.0
 
@@ -19,9 +22,10 @@ AP = xray.AccuracyParameters(
     method="trapz-GMRES",
     qdyson_atol=1e-4,
     qdyson_min_step=0.1,
+    parallelize_orbitals=False,
 )
 
-qpc = xray.QPC(PP, int(1e4), 100.0)
+qpc = xray.ExtendedQPC(PP, int(1e4), 100.0)
 solver = xray.CorrelatorSolver(qpc, PP.orbitals, PP.couplings, AP)
 solver.verbose = True
 
@@ -36,10 +40,12 @@ run_time = time.time() - start
 
 print(f"full run time: {full_run_time} s")
 print(f"run time: {run_time} s")
-
-solver.plot_nr_GMRES_iter()
-
+print()
+print(f"Error: {err}")
+print()
 
 times = np.linspace(0.0, 1.5 * tmax, 1000)
 plt.plot(times, solver.C(0, 0, times).real)
 plt.show()
+
+solver.plot_nr_GMRES_iter()
