@@ -304,10 +304,6 @@ class CorrelatorSolver:
             C_vals *= -sign
             err_tot += err
 
-            slope_j = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
-            slope += slope_j
-            intercept += C_vals[-1] - slope_j * times[-1]
-
             C_interp_list.append(
                 interpolate.CubicSpline(
                     *tb.symmetrize(times, C_vals, 0.0, lambda x: np.conj(x)),
@@ -315,6 +311,10 @@ class CorrelatorSolver:
                     extrapolate=False,
                 )
             )
+
+            slope_j = C_interp_list[-1].derivative()(times[-1])
+            slope += slope_j
+            intercept += C_vals[-1] - slope_j * times[-1]
 
         self._cache_C_interp[type][Q] = lambda u: np.sum(
             [f(u) for f in C_interp_list], axis=0
