@@ -152,6 +152,7 @@ class CorrelatorSolver:
         self.N = 3  # nr of different charge states affecting the QPC
         self._cache_C_interp = [[None] * self.N, [None] * self.N]
         self._cache_C_tail = [[None] * self.N, [None] * self.N]
+        self.nr_iter_dict = {}
 
     def A_plus(self, Q, times):
         """
