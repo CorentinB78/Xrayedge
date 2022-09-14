@@ -40,6 +40,6 @@ print(f"run time: {run_time} s")
 solver.plot_nr_GMRES_iter()
 
 
-times = np.linspace(0.0, tmax, 300)
+times = np.linspace(0.0, 1.5 * tmax, 1000)
 plt.plot(times, solver.C(0, 0, times).real)
 plt.show()

@@ -244,44 +244,53 @@ class CorrelatorSolver:
             raise ValueError
 
         self.nr_iter_dict = {}
+        C_interp_list = []
+        slope = 0.0j
+        intercept = 0.0j
+        err_tot = 0.0
 
-        times, C_vals, err = cum_int_adapt_simpson(
-            lambda t: self.phi(sign, Q, t),
-            self.AP.time_extrapolate,
-            tol=self.AP.tol_C,
-            verbose=self.verbose,
+        for j in range(len(self.orbitals)):
+
+            times, C_vals, err = cum_int_adapt_simpson(
+                lambda t: self.phi(sign, Q, t, j),
+                self.AP.time_extrapolate,
+                tol=self.AP.tol_C,
+                verbose=self.verbose,
+            )
+
+            C_vals *= -sign
+            err_tot += err
+
+            slope_j = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
+            slope += slope_j
+            intercept += C_vals[-1] - slope_j * times[-1]
+
+            C_interp_list.append(
+                interpolate.CubicSpline(
+                    *tb.symmetrize(times, C_vals, 0.0, lambda x: np.conj(x)),
+                    bc_type="natural",
+                    extrapolate=False,
+                )
+            )
+
+        self._cache_C_interp[type][Q] = lambda u: np.sum(
+            [f(u) for f in C_interp_list], axis=0
         )
-        C_vals *= -sign
-
-        slope = (C_vals[-1] - C_vals[-2]) / (times[-1] - times[-2])
-        intercept = C_vals[-1] - slope * times[-1]
-
-        C_interp = interpolate.CubicSpline(
-            *tb.symmetrize(times, C_vals, 0.0, lambda x: np.conj(x)),
-            bc_type="natural",
-            extrapolate=False,
-        )
-        self._cache_C_interp[type][Q] = C_interp
         self._cache_C_tail[type][Q] = (intercept, slope)
 
-        return err
+        return err_tot
 
-    def phi(self, sign, Q, t):
+    def phi(self, sign, Q, t, orb_idx):
         """
         Computes \phi_t(t, t^+) using the quasi Dyson equation.
         """
         # TODO: refactor calculation of phi (better N, individual interpolations, manage guesses maybe)
         assert t >= 0.0
+        orb = self.orbitals[orb_idx]
+        coupling = self.capacitive_couplings[orb_idx]
 
         if np.abs(t) < 1e-10:
-            out = 0.0j
-
-            for orb, coupling in zip(self.orbitals, self.capacitive_couplings):
-                out += coupling * self.reservoir.g_less_t_fun(Q)(orb, orb)(0.0)
-
-            return out
-
-        out = 0.0j
+            return coupling * self.reservoir.g_less_t_fun(Q)(orb, orb)(0.0)
 
         if self.AP.qdyson_min_step is None:
             start_N = None
@@ -289,29 +298,25 @@ class CorrelatorSolver:
             start_N = 2 ** round(np.log2(t / self.AP.qdyson_min_step))
             start_N = max(16, start_N)
 
-        for j in range(len(self.orbitals)):
+        phi_fun, err, nr_iter_dict = solve_quasi_dyson_adapt(
+            self.reservoir.g_less_t_fun(Q),
+            self.reservoir.g_grea_t_fun(Q),
+            t,
+            orb,
+            self.orbitals,
+            -sign * self.capacitive_couplings,
+            self.AP.qdyson_rtol,
+            self.AP.qdyson_atol,
+            start_N=start_N,
+            method=self.AP.method,
+            tol_gmres=self.AP.tol_gmres,
+            atol_gmres=self.AP.atol_gmres,
+            max_N=self.AP.qdyson_max_N,
+        )
 
-            phi_fun, err, nr_iter_dict = solve_quasi_dyson_adapt(
-                self.reservoir.g_less_t_fun(Q),
-                self.reservoir.g_grea_t_fun(Q),
-                t,
-                self.orbitals[j],
-                self.orbitals,
-                -sign * self.capacitive_couplings,
-                self.AP.qdyson_rtol,
-                self.AP.qdyson_atol,
-                start_N=start_N,
-                method=self.AP.method,
-                tol_gmres=self.AP.tol_gmres,
-                atol_gmres=self.AP.atol_gmres,
-                max_N=self.AP.qdyson_max_N,
-            )
+        self.nr_iter_dict[(t, orb_idx)] = nr_iter_dict
 
-            self.nr_iter_dict[(t, j)] = nr_iter_dict
-
-            out += self.capacitive_couplings[j] * phi_fun(t)[j]
-
-        return out
+        return coupling * phi_fun(t)[orb_idx]
 
     ### getters ###
     def get_tail(self, type, Q):
