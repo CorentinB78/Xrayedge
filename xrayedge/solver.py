@@ -3,6 +3,9 @@ from scipy import interpolate
 import toolbox as tb
 from copy import copy
 from .integral_solvers import solve_quasi_dyson_adapt, cum_int_adapt_simpson
+import matplotlib
+import matplotlib.pyplot as plt
+
 
 # TODO parallelize?
 # TODO cleanup notes!
@@ -239,6 +242,8 @@ class CorrelatorSolver:
         else:
             raise ValueError
 
+        self.nr_iter_dict = {}
+
         times, C_vals, err = cum_int_adapt_simpson(
             lambda t: self.phi(sign, Q, t),
             self.AP.time_extrapolate,
@@ -285,7 +290,7 @@ class CorrelatorSolver:
 
         for j in range(len(self.orbitals)):
 
-            phi_fun, err, N = solve_quasi_dyson_adapt(
+            phi_fun, err, nr_iter_dict = solve_quasi_dyson_adapt(
                 self.reservoir.g_less_t_fun(Q),
                 self.reservoir.g_grea_t_fun(Q),
                 t,
@@ -301,6 +306,8 @@ class CorrelatorSolver:
                 max_N=self.AP.qdyson_max_N,
             )
 
+            self.nr_iter_dict[(t, j)] = nr_iter_dict
+
             out += self.capacitive_couplings[j] * phi_fun(t)[j]
 
         return out
@@ -312,3 +319,18 @@ class CorrelatorSolver:
             raise RuntimeError("Tail has not been computed.")
 
         return tail
+
+    ### convenience ###
+    def plot_nr_GMRES_iter(self):
+        cmap = matplotlib.cm.get_cmap("Spectral")
+
+        for key, dict2 in self.nr_iter_dict.items():
+            t, j = key
+            plt.plot(
+                dict2.keys(), dict2.values(), "o-", c=cmap(t / self.AP.time_extrapolate)
+            )
+
+        plt.xlabel("matrix size")
+        plt.ylabel("nr GMRES iterations")
+        plt.semilogx()
+        plt.show()

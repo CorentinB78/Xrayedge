@@ -178,22 +178,22 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         def cst_func(c):
             return lambda a, b: np.vectorize(lambda x: c)
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, 0, [0], [V], 10, method="cheb"
         )
         np.testing.assert_allclose(phi[0], 1.0 / (1.0 + V * t))
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, 0, [0], [V], 10, method="cheb"
         )
         np.testing.assert_allclose(phi[0], 0.0)
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, 0, [0], [V], 20, method="cheb"
         )
         np.testing.assert_allclose(phi[0], np.exp(V * (time - t)))
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             lambda a, b: np.sin, lambda a, b: np.cos, t, 0, [0], [V], 50, method="cheb"
         )
         np.testing.assert_allclose(phi[0], self.solution_ref(time), atol=1e-4)
@@ -202,7 +202,7 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         V = 2.0
         t = 3.0
 
-        phi_fun, err, N = solve_quasi_dyson_adapt(
+        phi_fun, err, _ = solve_quasi_dyson_adapt(
             lambda a, b: np.sin,
             lambda a, b: np.cos,
             t,
@@ -227,22 +227,22 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         def cst_func(c):
             return lambda a, b: np.vectorize(lambda x: c)
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             cst_func(1.0), cst_func(1.0), t, 0, [0], [V], 10, method="trapz"
         )
         np.testing.assert_allclose(phi[0], 1.0 / (1.0 + V * t))
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             cst_func(0.0), cst_func(1.0), t, 0, [0], [V], 10, method="trapz"
         )
         np.testing.assert_allclose(phi[0], 0.0)
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             cst_func(1.0), cst_func(0.0), t, 0, [0], [V], 1000, method="trapz"
         )
         np.testing.assert_allclose(phi[0], np.exp(V * (time - t)), rtol=1e-4, atol=1e-4)
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             lambda a, b: np.sin,
             lambda a, b: np.cos,
             t,
@@ -260,7 +260,7 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         N = 100
         time = np.linspace(0, t, N)
 
-        time, phi = solve_quasi_dyson(
+        time, phi, _ = solve_quasi_dyson(
             lambda a, b: np.sin,
             lambda a, b: np.cos,
             t,
@@ -279,7 +279,7 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = solve_quasi_dyson(
+        times, f_vals, _ = solve_quasi_dyson(
             lambda a, b: gl, lambda a, b: gg, t, 0, [0], [V], 50, method="cheb"
         )
 
@@ -305,7 +305,7 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
         t = 3.0
         V = 0.0001
 
-        times, f_vals = solve_quasi_dyson(
+        times, f_vals, _ = solve_quasi_dyson(
             lambda a, b: gl, lambda a, b: gg, t, 0, [0], [V], 200, method="trapz"
         )
 
@@ -340,7 +340,7 @@ class TestQuasiDysonMultiOrbital(unittest.TestCase):
         orbitals = [0, 1]
         couplings = V * np.asarray([1.0, 0.5])
 
-        times, f_vals = solve_quasi_dyson(
+        times, f_vals, _ = solve_quasi_dyson(
             gl, gg, t, orb, orbitals, couplings, 300, method="trapz-GMRES"
         )
 

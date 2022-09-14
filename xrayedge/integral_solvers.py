@@ -48,11 +48,14 @@ class BlockLinearOperator(LinearOperator):
                 assert op.shape == shape
         self.subshape = shape
 
+        self.nr_matvec = 0
+
         super().__init__(
             dtype, shape=(supershape[0] * shape[0], supershape[1] * shape[1])
         )
 
     def _matvec(self, x):
+        self.nr_matvec += 1
         out = np.zeros(self.shape[0], dtype=self.dtype)
         N, M = self.subshape
         for i in range(self.blocks.shape[0]):
@@ -167,6 +170,7 @@ def solve_quasi_dyson(
     Returns:
         grid_pts -- 1D array, time coordinates
         f_values -- 2D array, values for f, shape (len(orbitals), N)
+        nr_iter -- int, number of matrix products done (None if GMRES was not used)
     """
     assert t > 0.0
     assert N > 1
@@ -208,7 +212,7 @@ def solve_quasi_dyson(
             mat_M[m, m] += 1.0
 
         vec_b = g_less(orb, orb)(t_array - t)
-        return t_array, linalg.solve(mat_M, vec_b)[None, :]
+        return t_array, linalg.solve(mat_M, vec_b)[None, :], None
 
     elif method.startswith("trapz"):
         t_array, delta = np.linspace(0.0, t, N, retstep=True)
@@ -249,7 +253,7 @@ def solve_quasi_dyson(
 
         if method == "trapz-LU":
             mat_M = mat_M.to_array()
-            return t_array, linalg.solve(mat_M, vec_b).reshape((nr_orb, N))
+            return t_array, linalg.solve(mat_M, vec_b).reshape((nr_orb, N)), None
 
         elif method == "trapz-GMRES":
 
@@ -267,7 +271,7 @@ def solve_quasi_dyson(
             elif info < 0:
                 raise RuntimeError("Problem with GMRES")
 
-            return t_array, res.reshape((nr_orb, N))
+            return t_array, res.reshape((nr_orb, N)), mat_M.nr_matvec
 
     raise ValueError(f'Method "{method}" not found.')
 
@@ -318,7 +322,7 @@ def solve_quasi_dyson_adapt(
     Returns:
         f -- callable t -> 1D array
         abs_err -- float, estimated absolute error
-        N -- int, number of samples used
+        nr_iter_dict -- dict: N -> nr of GMRES iter
     """
     orbitals = np.asarray(orbitals)
     couplings = np.asarray(couplings)
@@ -333,7 +337,9 @@ def solve_quasi_dyson_adapt(
     if tol_gmres > rtol:
         print("/!\ [Quasi Dyson] tol_gmres is larger than rtol!")
 
-    times, f_vals = solve_quasi_dyson(
+    nr_iter_dict = {}
+
+    times, f_vals, nr_iter = solve_quasi_dyson(
         g_less,
         g_grea,
         t,
@@ -348,6 +354,7 @@ def solve_quasi_dyson_adapt(
     )
     f = cpx_interp1d(times, f_vals, axis=1, kind="linear")
     err_times = times
+    nr_iter_dict[N] = nr_iter
 
     while True:
 
@@ -357,7 +364,7 @@ def solve_quasi_dyson_adapt(
 
         N *= 2
 
-        times, f_vals = solve_quasi_dyson(
+        times, f_vals, nr_iter = solve_quasi_dyson(
             g_less,
             g_grea,
             t,
@@ -379,6 +386,7 @@ def solve_quasi_dyson_adapt(
 
         f = new_f
         err_times = times
+        nr_iter_dict[N] = nr_iter
 
         if verbose:
             print(f"{N}: \t abs_err={abs_err}, \t rel err={rel_err}")
@@ -386,7 +394,7 @@ def solve_quasi_dyson_adapt(
         if abs_err < atol or rel_err < rtol:
             break
 
-    return f, abs_err, N
+    return f, abs_err, nr_iter_dict
 
 
 ### Cumulated adaptative integral

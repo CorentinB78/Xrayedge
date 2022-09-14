@@ -28,7 +28,7 @@ solver.verbose = True
 start = time.time()
 start_full = time.process_time()
 
-# cProfile.run("model.compute_C(type=0, Q=0)")
+# cProfile.run("solver.compute_C(type=0, Q=0, force_recompute=True)")
 err = solver.compute_C(type=0, Q=0, force_recompute=True)
 
 full_run_time = time.process_time() - start_full
@@ -36,9 +36,9 @@ run_time = time.time() - start
 
 print(f"full run time: {full_run_time} s")
 print(f"run time: {run_time} s")
-print()
-print(f"Error: {err}")
-print()
+
+solver.plot_nr_GMRES_iter()
+
 
 times = np.linspace(0.0, tmax, 300)
 plt.plot(times, solver.C(0, 0, times).real)
