@@ -5,9 +5,10 @@ from copy import copy
 from .integral_solvers import solve_quasi_dyson_adapt, cum_int_adapt_simpson
 import matplotlib
 import matplotlib.pyplot as plt
+import functools
+import multiprocessing
 
 
-# TODO parallelize?
 # TODO cleanup notes!
 
 
@@ -81,6 +82,7 @@ class AccuracyParameters(Parameters):
         qdyson_max_N=int(1e8),
         nr_freqs_res=int(1e4),
         w_max_res=100.0,
+        parallelize_orbitals=False,
     ):
         self.time_extrapolate = time_extrapolate
         self.tol_C = tol_C
@@ -93,6 +95,7 @@ class AccuracyParameters(Parameters):
         self.qdyson_max_N = qdyson_max_N
         self.nr_freqs_res = nr_freqs_res
         self.w_max_res = w_max_res
+        self.parallelize_orbitals = parallelize_orbitals
 
 
 def gen_params(accuracy_params, gmres=False):
@@ -124,6 +127,35 @@ def gen_params(accuracy_params, gmres=False):
         params = copy(accuracy_params)
         params.atol_gmres *= 10.0
         yield params, "atol_gmres"
+
+
+def _split_nr_ticks(n, j):
+    q = 100 // n
+    r = 100 % n
+    return q + (1 if j < r else 0)
+
+
+def _run(j, self, sign, Q):
+    """
+    Need this function to be defined at the top level of the module to be picklable.
+    For use with multiprocessing pool in `CorrelatorSolver`.
+    """
+    nr_ticks = (
+        _split_nr_ticks(len(self.orbitals), j) if self.AP.parallelize_orbitals else 100
+    )
+
+    f = functools.partial(self.phi, sign, Q, orb_idx=j)  # t -> phi(sign, Q, t, j)
+
+    times, C_vals, err = cum_int_adapt_simpson(
+        f,
+        self.AP.time_extrapolate,
+        tol=self.AP.tol_C,
+        verbose=self.verbose,
+        progress_nr_ticks=nr_ticks,
+        multiproc_progress_bar=self.AP.parallelize_orbitals,
+    )
+
+    return times, C_vals, err
 
 
 class CorrelatorSolver:
@@ -249,14 +281,25 @@ class CorrelatorSolver:
         intercept = 0.0j
         err_tot = 0.0
 
-        for j in range(len(self.orbitals)):
+        run = functools.partial(_run, sign=sign, Q=Q, self=self)
 
-            times, C_vals, err = cum_int_adapt_simpson(
-                lambda t: self.phi(sign, Q, t, j),
-                self.AP.time_extrapolate,
-                tol=self.AP.tol_C,
-                verbose=self.verbose,
-            )
+        if self.AP.parallelize_orbitals:
+            if self.verbose:
+                print(
+                    "Simpson progress (out of 100): - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - |",
+                    flush=True,
+                )
+
+            with multiprocessing.Pool(len(self.orbitals)) as p:
+                res = p.map(run, range(len(self.orbitals)))
+
+            if self.verbose:
+                print()
+
+        else:
+            res = map(run, range(len(self.orbitals)))
+
+        for times, C_vals, err in res:
 
             C_vals *= -sign
             err_tot += err
@@ -284,7 +327,6 @@ class CorrelatorSolver:
         """
         Computes \phi_t(t, t^+) using the quasi Dyson equation.
         """
-        # TODO: refactor calculation of phi (better N, individual interpolations, manage guesses maybe)
         assert t >= 0.0
         orb = self.orbitals[orb_idx]
         coupling = self.capacitive_couplings[orb_idx]

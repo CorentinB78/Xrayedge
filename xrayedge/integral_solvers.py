@@ -400,7 +400,15 @@ def solve_quasi_dyson_adapt(
 ### Cumulated adaptative integral
 
 
-def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000, verbose=False):
+def cum_int_adapt_simpson(
+    f,
+    xmax,
+    tol=1e-8,
+    maxfeval=100000,
+    verbose=False,
+    progress_nr_ticks=100,
+    multiproc_progress_bar=False,
+):
     """
     Adaptative simpson cumulative integral (antiderivative) of `f`, starting from x=0 toward x > 0.
 
@@ -411,17 +419,20 @@ def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000, verbose=False):
     Keyword Arguments:
         tol -- absolute tolerance in the antiderivative (default: {1e-8})
         maxfeval -- max number of `f` evaluations (default: {100000})
+        verbose -- bool, if True a progress bar is printed
+        progress_nr_ticks -- int, nr of ticks in progress bar (usefull for multiproc)
+        multiproc_progress_bar -- bool, if True, adapt progress bar display to mulriproc
 
     Returns:
         (coordinates, antiderivative, error) -- three 1D arrays
     """
 
-    if verbose:
+    progress = 0
+    if verbose and (not multiproc_progress_bar):
         print(
             "Simpson progress (out of 100): - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - |",
             flush=True,
         )
-        progress = 0
 
     a = 0.0
     b = xmax
@@ -461,7 +472,7 @@ def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000, verbose=False):
 
         if err < tol:
             if verbose:
-                new_progress = round(x[i + 4] / xmax * 100)
+                new_progress = round(x[i + 4] / xmax * progress_nr_ticks)
                 print("|" * (new_progress - progress), end="", flush=True)
                 progress = new_progress
             i += 4  # go to next segment
@@ -483,7 +494,7 @@ def cum_int_adapt_simpson(f, xmax, tol=1e-8, maxfeval=100000, verbose=False):
     err = np.abs(cumint[2::2] - cumint_2)
     # x_err = x[4::4]
 
-    if verbose:
+    if verbose and (not multiproc_progress_bar):
         print()
 
     return x_cumint, cumint, max(err)
