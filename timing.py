@@ -17,6 +17,8 @@ AP = xray.AccuracyParameters(
     time_extrapolate=tmax,
     tol_C=1e-3,
     method="trapz-GMRES",
+    qdyson_atol=1e-4,
+    qdyson_min_step=0.1,
 )
 
 qpc = xray.QPC(PP, int(1e4), 100.0)

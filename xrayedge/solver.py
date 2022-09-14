@@ -72,6 +72,7 @@ class AccuracyParameters(Parameters):
         tol_C=1e-2,
         qdyson_rtol=1e-5,
         qdyson_atol=1e-5,
+        qdyson_min_step=None,
         method="trapz",
         tol_gmres=1e-10,
         atol_gmres=1e-10,
@@ -83,6 +84,7 @@ class AccuracyParameters(Parameters):
         self.tol_C = tol_C
         self.qdyson_rtol = qdyson_rtol
         self.qdyson_atol = qdyson_atol
+        self.qdyson_min_step = qdyson_min_step
         self.method = method
         self.tol_gmres = tol_gmres
         self.atol_gmres = atol_gmres
@@ -238,11 +240,8 @@ class CorrelatorSolver:
         else:
             raise ValueError
 
-        self._cached_phi = []
-        self._times = []
-
         times, C_vals, err = cum_int_adapt_simpson(
-            lambda t: self.phi(sign, Q, t, use_cache_N=True, cache_N=True),
+            lambda t: self.phi(sign, Q, t),
             self.AP.time_extrapolate,
             tol=self.AP.tol_C,
             verbose=self.verbose,
@@ -262,7 +261,7 @@ class CorrelatorSolver:
 
         return err
 
-    def phi(self, sign, Q, t, start_N=None, use_cache_N=False, cache_N=False):
+    def phi(self, sign, Q, t):
         """
         Computes \phi_t(t, t^+) using the quasi Dyson equation.
         """
@@ -277,13 +276,13 @@ class CorrelatorSolver:
 
             return out
 
-        if use_cache_N and len(self._times) > 0:
-            idx = bisect.bisect(self._times, t)
-            if idx != 0:
-                start_N = self._cached_phi[idx - 1]
-
         out = 0.0j
-        N_max = 0
+
+        if self.AP.qdyson_min_step is None:
+            start_N = None
+        else:
+            start_N = 2 ** round(np.log2(t / self.AP.qdyson_min_step))
+            start_N = max(16, start_N)
 
         for j in range(len(self.orbitals)):
 
@@ -303,14 +302,7 @@ class CorrelatorSolver:
                 max_N=self.AP.qdyson_max_N,
             )
 
-            N_max = max(N_max, N)
-
             out += self.capacitive_couplings[j] * phi_fun(t)[j]
-
-        if cache_N:
-            idx = bisect.bisect(self._times, t)
-            self._times.insert(idx, t)
-            self._cached_phi.insert(idx, N_max // 2)
 
         return out
 
