@@ -277,26 +277,15 @@ class CorrelatorSolver:
 
             return out
 
-        guess_flag = False
         if use_cache_N and len(self._times) > 0:
             idx = bisect.bisect(self._times, t)
             if idx != 0:
-                _, start_N = self._cached_phi[idx - 1]
-            if idx < len(self._times):
-                t_cache = self._times[idx]
-                all_guess_phi, _ = self._cached_phi[idx]
-                guess_flag = True
+                start_N = self._cached_phi[idx - 1]
 
         out = 0.0j
         N_max = 0
-        all_phi_fun = []
 
         for j in range(len(self.orbitals)):
-
-            if guess_flag:
-                guess = lambda u: all_guess_phi[j](u + t_cache - t)
-            else:
-                guess = None
 
             phi_fun, err, N = solve_quasi_dyson_adapt(
                 self.reservoir.g_less_t_fun(Q),
@@ -308,14 +297,12 @@ class CorrelatorSolver:
                 self.AP.qdyson_rtol,
                 self.AP.qdyson_atol,
                 start_N=start_N,
-                guess=guess,
                 method=self.AP.method,
                 tol_gmres=self.AP.tol_gmres,
                 atol_gmres=self.AP.atol_gmres,
                 max_N=self.AP.qdyson_max_N,
             )
 
-            all_phi_fun.append(phi_fun)
             N_max = max(N_max, N)
 
             out += self.capacitive_couplings[j] * phi_fun(t)[j]
@@ -323,7 +310,7 @@ class CorrelatorSolver:
         if cache_N:
             idx = bisect.bisect(self._times, t)
             self._times.insert(idx, t)
-            self._cached_phi.insert(idx, (all_phi_fun, N_max // 2))
+            self._cached_phi.insert(idx, N_max // 2)
 
         return out
 

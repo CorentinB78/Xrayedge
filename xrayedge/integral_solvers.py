@@ -365,7 +365,7 @@ def solve_quasi_dyson_adapt(
             orbitals,
             couplings,
             N,
-            guess=guess,
+            guess=f,
             method=method,
             tol_gmres=tol_gmres,
             atol_gmres=atol_gmres,
