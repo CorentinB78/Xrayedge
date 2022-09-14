@@ -2,7 +2,6 @@ import numpy as np
 from scipy import interpolate
 import toolbox as tb
 from copy import copy
-import bisect
 from .integral_solvers import solve_quasi_dyson_adapt, cum_int_adapt_simpson
 
 # TODO parallelize?
@@ -305,10 +304,6 @@ class CorrelatorSolver:
             out += self.capacitive_couplings[j] * phi_fun(t)[j]
 
         return out
-
-    def empty_qdyson_cache(self):
-        self._times = []
-        self._cached_phi = []
 
     ### getters ###
     def get_tail(self, type, Q):

@@ -209,8 +209,8 @@ class TestQuasiDysonSingleOrbital(unittest.TestCase):
             0,
             [0],
             [V],
-            rtol=1e-3,
-            atol=1e-3,
+            rtol=1e-8,
+            atol=1e-4,
             method="trapz",
             verbose=False,
         )
