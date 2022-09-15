@@ -119,6 +119,10 @@ def gen_params(accuracy_params, gmres=False):
     params.qdyson_rtol *= 10.0
     yield params, "qdyson_rtol"
 
+    params = copy(accuracy_params)
+    params.qdyson_atol *= 10.0
+    yield params, "qdyson_atol"
+
     if gmres:
         params = copy(accuracy_params)
         params.tol_gmres *= 10.0
