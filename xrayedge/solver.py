@@ -283,6 +283,9 @@ class CorrelatorSolver:
 
         run = functools.partial(_run, sign=sign, Q=Q, self=self)
 
+        # TODO: use threadpoolctl to limit number of threads automatically
+        # TODO: find a way for cached reservoir data to survive inside multiprocessing
+
         if self.AP.parallelize_orbitals:
             if self.verbose:
                 print(
