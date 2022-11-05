@@ -139,6 +139,13 @@ class GFWithTails:
         self._vec_call = np.vectorize(self._call)
 
     def extrap_tails(self, x_left, x_right):
+        """
+        Build tail extrapolation
+
+        Arguments:
+            x_left -- left bound (unshifted frequency)
+            x_right -- right bound (unshifted frequency)
+        """
         if not (x_left < x_right):
             raise RuntimeError("x_left must be < x_right")
 
@@ -223,27 +230,6 @@ class GFWithTails:
             2 * abs(self._imag_bounds[1]),
         )
 
-        # real part
-        if real_part:
-
-            plt.plot(x, f.real, "--")
-            plt.plot(x0, f0.real)
-
-            plt.loglog()
-            tb.autoscale_y(logscale=True)
-
-            plt.axvline(self._real_bounds[1], c="k", ls=":", alpha=0.4)
-            plt.show()
-
-            plt.plot(-x, -f.real, "--")
-            plt.plot(-x0, -f0.real)
-
-            plt.loglog()
-            tb.autoscale_y(logscale=True)
-
-            plt.axvline(-self._real_bounds[0], c="k", ls=":", alpha=0.4)
-            plt.show()
-
         # imag part
         plt.plot(x0, -f0.imag, label="original data")
         # plt.xlim(*plt.xlim())  # freeze xlim
@@ -256,6 +242,7 @@ class GFWithTails:
         plt.axvline(self._imag_bounds[1], c="k", ls=":", alpha=0.4)
 
         plt.legend()
+        plt.xlabel("unshifted frequency")
 
         if filename is not None:
             plt.savefig(filename)
@@ -272,4 +259,41 @@ class GFWithTails:
 
             plt.plot(x, np.imag(1.0 / f), "--")
 
+            plt.show()
+
+        # real part
+        if real_part:
+
+            x = np.linspace(
+                -10 * abs(self._real_bounds[0]), 10 * abs(self._real_bounds[1]), 1000
+            )
+            f = self(x + self._en_shift)  # unshift first
+
+            x0, f0 = tb.vcut(
+                self._omegas,
+                self._gf_vals,
+                -10 * abs(self._real_bounds[0]),
+                10 * abs(self._real_bounds[1]),
+            )
+
+            plt.plot(x, f.real, "--", label="extrapolation")
+            plt.plot(x0, f0.real, label="original data")
+
+            plt.loglog()
+            tb.autoscale_y(logscale=True)
+
+            plt.axvline(self._real_bounds[1], c="k", ls=":", alpha=0.4)
+            plt.legend()
+            plt.xlabel("unshifted frequency")
+            plt.show()
+
+            plt.plot(-x, -f.real, "--", label="extrapolation")
+            plt.plot(-x0, -f0.real, label="original data")
+
+            plt.loglog()
+            tb.autoscale_y(logscale=True)
+
+            plt.axvline(-self._real_bounds[0], c="k", ls=":", alpha=0.4)
+            plt.legend()
+            plt.xlabel("unshifted frequency")
             plt.show()
