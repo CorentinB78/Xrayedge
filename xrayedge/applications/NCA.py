@@ -138,9 +138,10 @@ class GFWithTails:
 
         self._vec_call = np.vectorize(self._call)
 
-    def extrap_tails(self, tol_left, tol_right):
-        self._tol_left = tol_left
-        self._tol_right = tol_right
+    def extrap_tails(self, x_left, x_right):
+        if not (x_left < x_right):
+            raise RuntimeError("x_left must be < x_right")
+
         xp = self._omegas
         yp = self._gf_vals
 
@@ -152,11 +153,11 @@ class GFWithTails:
         self._neg_real_tail = tangent_power_law(xp, yp.real, x0=-x0)
 
         ### imag part
-        mask_left = -yp.imag > tol_left
-        mask_right = -yp.imag > tol_right
+        idx_left = np.argmin(np.abs(xp - x_left))
+        idx_right = np.argmin(np.abs(xp - x_right))
 
-        idx_left = np.nonzero(mask_left)[0][0]
-        idx_right = np.nonzero(mask_right)[0][-1]
+        if not (idx_left < idx_right):
+            raise RuntimeError("idx_left is not < idx_right")
 
         self._imag_bounds = [xp[idx_left], xp[idx_right]]
 
@@ -251,8 +252,6 @@ class GFWithTails:
 
         plt.plot(x, -f.imag, "--", label="extrapolation")
 
-        plt.axhline(self._tol_left, c="k", ls=":", alpha=0.4)
-        plt.axhline(self._tol_right, c="k", ls=":", alpha=0.4)
         plt.axvline(self._imag_bounds[0], c="k", ls=":", alpha=0.4)
         plt.axvline(self._imag_bounds[1], c="k", ls=":", alpha=0.4)
 
