@@ -1,1 +1,5 @@
 doc/*.pdf
+doc/*.log
+doc/*.aux
+doc/*.bcf
+doc/*.toc
