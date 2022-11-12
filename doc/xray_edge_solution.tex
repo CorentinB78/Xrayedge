@@ -324,27 +324,6 @@ which can be seen as a linear algebra problem $M f = b$, using the shortcuts
 \end{align}
 
 
-\section{Green function in the reservoir}
-
-\TODO{update with two spins}
-\TODO{Update with generalized coupling}
-
-We follow the same steps:
-\begin{align}
-	-i G^<_c(t, t') ={}& \expval{\tilde c^\dagger(t') \tilde c(t)}
-	\\
-	={}& \frac{1}{Z_0} \Tr_c \sum_{Q=0,1} \qty[e^{-\beta H_c} e^{-\beta E_0 Q} \tilde U_Q^\dagger(t') c^\dagger(t') \tilde U_Q(t') \tilde U_Q^\dagger(t) c(t) \tilde U_Q(t)]
-	\\
-	={}& -i \frac{1}{Z_b} \qty(g^<_c(t, t') + e^{-\beta E_0} \tilde G^<_c(t, t'))
-\end{align}
-And:
-\begin{equation}
-	-i G^>_c(t, t') = -i \frac{1}{Z_b} \qty(g^>_c(t, t') + e^{-\beta E_0} \tilde G^>_c(t, t'))
-\end{equation}
-$g_c$ are the \ac{GF} of the unperturbed problem $H_c + H_d$, while $\tilde G_c$ are the \ac{GF} of the effective problem for $Q=1$.
-
-
-
 %\begin{figure}[t]
 %    \centering
 %    \includegraphics[width=8cm]{my_figure.pdf}
