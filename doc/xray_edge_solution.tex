@@ -24,14 +24,14 @@
 
 \begin{document}
 
-\title{Solution of X-ray edge problem}
+\title{An algorithm for the X-ray edge problem}
 \author{Corentin Bertrand}
 
 \maketitle
 
-%\begin{abstract}
-%    Abstract text
-%\end{abstract}
+\begin{abstract}
+    Documentation for \textsc{Xrayedge}, a python package to solve a X-ray edge problem numerically.
+\end{abstract}
 
 %\tableofcontents
 
@@ -42,15 +42,15 @@
 	\acro{QD}{Quantum Dot}
 \end{acronym}
 
-\section{References}
+\section{Introduction}
 
-The reference: \cite{NozieresDeDominicis1969}. Related: \cite{Roulet1969, NozieresRoulet1969}
+The X-ray edge problem has been solved analytically in the long time limit by Nozières and De Dominicis in Ref.~\cite{NozieresDeDominicis1969}.
+A non-equilibrium application of their work can be found in Ref.~\cite{Aleiner1997}.
 
-Non equilibrium version: \cite{Aleiner1997}
+However, there is no known analytical solution at all times.
+Our package aims at providing a full and exact numerical solution by solving the equations derived in Ref.~\cite{NozieresDeDominicis1969}.
 
 \section{The problem}
-
-\TODO{Generalize to larger impurities}
 
 The X-ray edge problem is described by this Hamiltonian:
 \begin{equation}
@@ -64,98 +64,125 @@ where
 	\\
 	N_c ={}& \sum_{n \in \mathcal{S}} v_n c_n^\dag c_n
 \end{align}
-$H_c$ is the Hamiltonian of an non-interacting system, typically a fermionic reservoir, which we represent as a 1D chain here. $H_d$ is the Hamiltonian of an isolated fermionic single orbital system, with Coulomb repulsion, which we will call \ac{QD}. These two systems are capacitively coupled through the last term. $N_c$ is the charge distribution of the reservoir that participates to the capacitive coupling.
+$H_c$ is the Hamiltonian of an non-interacting system, typically a fermionic reservoir, which we represent as a 1D chain here. $c_n^\nodag$ annihilates a reservoir electron on site $n$.
+$H_d$ is the Hamiltonian of an isolated Anderson impurity model, which we will call \ac{QD}.
+$d_\sigma^\nodag$ annihilates a \ac{QD} electron of spin $\sigma \in \{\up, \dn\}$.
+These two systems are capacitively coupled through the last term. $N_c$ is the charge distribution of the reservoir that participates to the capacitive coupling.
 
-As the quantum dot is isolated, its occupation is conserved. The X-ray edge problem can therefore be solved by dividing between its different occupation states. Hence we introduce the effective reservoir Hamiltonian for a quantum dot occupation $Q$:
+As the quantum dot is isolated, its occupation is conserved. The X-ray edge problem can therefore be solved by separating each of its different occupation states\cite{NozieresDeDominicis1969}.
+We introduce the effective reservoir Hamiltonian for a quantum dot occupation $Q$:
 \begin{equation}
 	H_Q = H_c + V N_c Q
 \end{equation}
 
 
-We use a Keldysh formalism where $V$ is turned on at $t=0$ and the initial state is described by the density matrix
+We use a Keldysh formalism where $V$ is turned on at time $t=0$ and the initial state is described by the density matrix
 \begin{equation}
-	\rho = \rho_c \; \rho_d
+	\rho_0 = \rho_0^c \; \rho_0^d
 \end{equation}
-with $\rho_c$ a non-equilibrium state of $H_c$ with partition function $Z_c$, and $\rho_d = e^{-\beta(H_d - \mu N_d)} / Z_d$ an equilibrium state of $H_d$ with partition function $Z_d = 1 + 2e^{-\beta(E_d - \mu)} + e^{-\beta(2(E_d - \mu) + U)}$. We will use $Z_0 = Z_c \; Z_d$.
+with $\rho_0^c$ a non-equilibrium state of $H_c$, and $\rho_0^d = e^{-\beta(H_d - \mu N_d)} / Z_d$ an equilibrium state of $H_d$ with partition function $Z_d = 1 + 2e^{-\beta(E_d - \mu)} + e^{-\beta(2(E_d - \mu) + U)}$.
+$\beta$ is an inverse temperature and $\mu$ a chemical potential.
 
-We want the Green functions for $d_\sigma$ and for $c$.
-
-\section{Green function for the \acf{QD}}
-
-In the following we drop the spin index when irrelevant.
-
-Let's work out the lesser \ac{GF}:
-\begin{align}
-	-i G^<_d(t, t') ={}& \expval{\tilde d_\up^\dagger(t') \tilde d_\up(t)}
-	\\
-	={}& \Tr \qty[\rho \; U^\dagger(t') e^{it'(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up^\dagger U(t') U^\dagger(t) d_\up e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} U(t)]
-	\\
-	={}& \sum_{Q_\up, Q_\dn=0,1} \!\!\!\! P(Q_\up, Q_\dn) \Tr_c \qty[\rho_c \; \bra{Q_\up, Q_\dn} U^\dagger(t') e^{it'(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up^\dagger U(t') U^\dagger(t) d_\up e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} U(t) \ket{Q_\up, Q_\dn}]
-\end{align}
-Here, we went in interaction picture, with the time evolution operator
-\begin{gather}
-	U(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V N_c(u) d_\sigma^\dagger d_\sigma} + \theta(-t) [\text{adjoint}]
-\end{gather}
-with $Nc(u)$ in the interaction picture. We then expressed the trace over $d$ as a sum over its four states $\ket{Q_\up, Q_\dn}$, $Q_\sigma=0, 1$, and we used $d_\up(t) = e^{-it(E_d + U d^\dag_\dn d^\nodag_\dn)} d_\up$.
-We introduced the probability $P(Q_\up, Q_\dn)$ to find the quantum dot in the state  $\ket{Q_\up, Q_\dn}$
+We will consider the steady state reached after a long time evolution, and described by the density matrix:
 \begin{equation}
-	P(Q_\up, Q_\dn) = \frac{1}{Z_d} e^{-\beta[(E_d - \mu) (Q_\up + Q_\dn) + Q_\up Q_\dn U]}
+	\label{eq:steady_state}
+	\rho = e^{-it_\infty H} \;\rho_0\; e^{it_\infty H}
+\end{equation}
+where we implicitly take the limit $t_\infty \rightarrow +\infty$.
+It will also be useful to introduce the reservoir steady state assuming a \ac{QD} occupation $Q$:
+\begin{equation}
+	\label{eq:steady_state_Q}
+	\rho_Q^c = e^{-it_\infty H_Q} \;\rho_0^c\; e^{it_\infty H_Q}
 \end{equation}
 
-To continue we need to note that:
+Our program computes the lesser and greater \ac{GF} on the \ac{QD}, defined as:
+\begin{subequations}
+	\begin{gather}
+		G^<_d(t) = i\Tr \qty[\rho \; d_\up^\dagger e^{itH} d_\up^\nodag e^{-itH}]
+		\\
+		G^>_d(t) = -i\Tr \qty[\rho \; e^{itH} d_\up^\nodag e^{-itH} d_\up^\dagger]
+	\end{gather}
+\end{subequations}
+These do not depend on spin due to symmetry.
+
+\section{Derivation of the equations to solve}
+
+\subsection{The $A$-correlators}
+
+Let's work out the lesser \ac{GF}. The greater \ac{GF} brings no further complications.
+We explicitly trace out the \ac{QD} by summing over its occupation basis $\ket{Q_\up, Q_\dn}$, $Q_\sigma=0, 1$.
 \begin{equation}
-	U(t) \ket{Q_\up,Q_\dn} = \ket{Q_\up,Q_\dn} \tilde U_{Q_\up + Q_\dn}(t)
+	G^<_d(t) = i \sum_{Q_\up, Q_\dn=0,1} \!\!\!\! \Tr_c \qty[ \bra{Q_\up, Q_\dn} \rho\; d_\up^\dagger e^{itH} d_\up^\nodag e^{-itH} \ket{Q_\up, Q_\dn}]
 \end{equation}
-with
+
+Crucially, the \ac{QD} occupation is conserved, and we can write
 \begin{equation}
-	\tilde U_Q(t) = \theta(t) T \exp{-i \int_0^t \dd{u} V N_c(u) Q} + \theta(-t) [\text{adjoint}]
+	H \ket{Q_\up, Q_\dn} = \ket{Q_\up, Q_\dn} \qty[H_c + E_d (Q_\up + Q_\dn) + U Q_\up Q_\dn + VN_c(Q_\up + Q_\dn)]
 \end{equation}
-and that $d_\up \ket{Q_\up,Q_\dn} = \delta_{Q_\up=1} \ket{0, Q_\dn}$.
-Finally:
+and as a consequence:
+\begin{equation}
+	e^{itH} \ket{Q_\up, Q_\dn} = \ket{Q_\up, Q_\dn} e^{itH_{Q_\up + Q_\dn}} e^{it\qty[E_d(Q_\up + Q_\dn) + U Q_\up Q_\dn]}
+\end{equation}
+Using this, and the fact that $d_\up \ket{Q_\up,Q_\dn} = \delta_{Q_\up,1} \ket{0, Q_\dn}$, we get:
+\begin{equation}
+	G^<_d(t) = i \sum_{Q=0,1} e^{-it(E_d + UQ)} \Tr_c \qty[\bra{1,Q}\rho\ket{1,Q} \; e^{it H_Q} e^{-it H_{Q+1}}]
+\end{equation}
+Using the same conservation law and Eqs.~\eqref{eq:steady_state} and~\eqref{eq:steady_state_Q}, we find that
+\begin{equation}
+	\bra{Q_\up, Q_\dn} \rho \ket{Q_\up, Q_\dn} = \bra{Q_\up, Q_\dn} \rho_0^d \ket{Q_\up, Q_\dn} \; \rho_{Q_\up + Q_\dn}^c
+\end{equation}
+This means the \ac{QD} and the reservoir states are not entangled when the \ac{QD} occupation is not in a superposition. This allows us to completely trace out the \ac{QD}.
+We introduce the probability $P(Q_\up, Q_\dn)$ to find the \ac{QD} in the state  $\ket{Q_\up, Q_\dn}$
+\begin{equation}
+	P(Q_\up, Q_\dn) = \bra{Q_\up, Q_\dn} \rho_0^d \ket{Q_\up, Q_\dn} = \frac{1}{Z_d} e^{-\beta\qty[(E_d - \mu) (Q_\up + Q_\dn) + Q_\up Q_\dn U]}
+\end{equation}
+so that we can finally write:
+\begin{equation}
+	G^<_d(t) = i \sum_{Q=0,1} P(1, Q) e^{-it(E_d + UQ)} \Tr_c \qty[\rho^c_{Q+1} \; e^{it H_Q} e^{-it H_{Q+1}}]
+\end{equation}
+
+Similarly, we find for the greater \ac{GF}:
+\begin{equation}
+	G^>_d(t) = -i \sum_{Q=0,1} P(0, Q) e^{-it(E_d + UQ)} \Tr_c \qty[\rho^c_{Q} \; e^{it H_Q} e^{-it H_{Q+1}}]
+\end{equation}
+
+Let's define the $A$-correlators
+\begin{subequations}
+	\begin{align}
+		A^<_Q(t) ={}& \Tr_c \qty[\rho^c_{Q+1} \; e^{it H_Q} e^{-it H_{Q+1}}]
+		\\
+		A^>_Q(t) ={}& \Tr_c \qty[\rho^c_Q \; e^{it H_Q} e^{-it H_{Q+1}}]
+	\end{align}
+\end{subequations}
+Note that because $\rho_Q^c$ is a steady state, it does not change through time evolution with $H_Q$, i.e. $e^{-itH_Q} \;\rho_Q^c\; e^{itH_Q} = \rho_Q^c$.
+As a consequence, by using the cyclic property of the trace we see that
+\begin{subequations}
+	\begin{align}
+		\Tr_c \qty[\rho^c_{Q+1} \; e^{it H_Q} e^{-it H_{Q+1}}] ={}& \Tr_c \qty[\rho^c_{Q+1} \; e^{-it H_{Q+1}} e^{it H_Q}]
+		\\
+		\Tr_c \qty[\rho^c_Q \; e^{it H_Q} e^{-it H_{Q+1}}] ={}& \Tr_c \qty[\rho^c_Q \; e^{-it H_{Q+1}} e^{it H_Q}]
+	\end{align}
+\end{subequations}
+This brings the following symmetry relations for the $A$-correlators:
 \begin{align}
-	-i G^<_d(t, t') ={}& \sum_{Q_\dn=0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(1, Q_\dn)
-	\expval{ \tilde U_{1+Q_\dn}^\dagger(t') \tilde U_{Q_\dn}(t' - t) \tilde U_{1 + Q_\dn}(t)}_c
+	A^{</>}_Q(-t) = A^{</>}_Q(t)^*
 \end{align}
-where $\expval{\ldots}_c = \Tr_c \qty[\rho_c \ldots ]$.
+	
+	
+\subsection{Diagrammatic solution}
 
-Similarly for the greater \ac{GF}:
-\begin{align}
-	i G^>_d(t, t') ={}& \expval{\tilde d_\up(t) \tilde d_\up^\dagger(t') }
-	\\
-	={}& \sum_{Q_\dn = 0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(0, Q_\dn)
-	\expval{ \tilde U_{Q_\dn}^\dag(t) \tilde U_{1 + Q_\dn}(t - t') \tilde U_{Q_\dn}(t')}_c
-\end{align}
-
-We define
-\begin{gather}
-	-i G^<_d(t, t') = \sum_{Q_\dn=0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(1, Q_\dn) A^-_{Q_\dn + 1}(t, t')^*
-	\\
-	i G^>_d(t, t') = \sum_{Q_\dn=0,1} e^{i(t' - t) (E_d + U Q_\dn)} P(0, Q_\dn) A^+_{Q_\dn}(t, t')
-\end{gather}
-with
-\begin{align}
-%	A^{s}_{Q}(t, t') ={}& \expval{ \tilde U_{Q}^\dagger(t') \tilde U_{Q-1}(t' - t) \tilde U_{Q}(t)}_c
-%	\\
-	A^{\pm}_{Q}(t, t') ={}& \expval{ \tilde U_{Q}^\dag(t) \tilde U_{Q\pm1}(t - t') \tilde U_{Q}(t')}_c
-\end{align}
-
-We see that $A^{\pm}_Q(t', t) = A^{\pm}_Q(t, t')^*$.
-Note that we only need $A_1^-, A_2^-, A_0^+, A_1^+$.
-
-
-\subsection{Solving the $A$s}
-
-In the steady state, we send the start of the contour to $-\infty$ and choose $t' = 0$, so that for all $t$:
-\begin{align}
-%	A^-_{Q}(t) ={}& \theta(t)\expval{ \tilde U_{Q-1}^\dag(t) \tilde U_{Q}(t)}_{H_{Q}} + \theta(-t)\expval{ \tilde U_{Q}(t) \tilde U_{Q-1}^\dag(t)}_{H_{Q}}
-%	\\
-	A^{\pm}_{Q}(t) ={}& \theta(t)\expval{ \tilde U_{Q}^\dag(t) \tilde U_{Q\pm1}(t)}_{H_{Q}} + \theta(-t)\expval{ \tilde U_{Q\pm1}(t) \tilde U_{Q}^\dag(t)}_{H_{Q}}
-\end{align}
-
-\subsubsection{Diagrammatic expression}
+To solve the X-ray edge problem, we see that we only need to compute correlators of the following form:
+\begin{equation}
+	A_Q^{\pm}(t) = \Tr_c\qty[\rho_Q^c\; e^{itH_Q} e^{-it H_{Q\pm1}}]
+\end{equation}
+and indeed we have $A_Q^>(t) = A_Q^+(t)$ and $A_Q^<(t) = A_{Q+1}^-(-t)$.
 
 In the following we assume $t \ge 0$.
-According to Wick theorem, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (labeled by a time within $[0, t]$, a site index $j \in \mathcal{S}$, and contributing $W v_j$ with $W=\pm V$) linked with $g^T(u, j; u', j') = -i\expval{T \tilde c_{j'}^\dag(u'^+) \tilde c_j(u)}_{H_Q}$, i.e. the time ordered Green functions solution of the reservoir with Hamiltonian $H_Q$. Each diagram is multiplied by $(-1)^{l}$ with $l$ the number of loops.
+According to Wick theorem, $A^{\pm}_Q(t)$ is the sum of all closed (connected or disconnected) diagrams made of two-point vertices (labeled by a time within $[0, t]$, a site index $j \in \mathcal{S}$, and contributing $W v_j$ with $W=\pm V$) linked with
+\begin{equation}
+	g^T(u, j; u', j') = -i \Tr_c\qty[\rho_Q^c \; T \tilde c_{j'}^\dag(u'^+) \tilde c_j(u)]
+\end{equation}
+i.e. the time ordered Green functions solution of the reservoir with Hamiltonian $H_Q$. Each contribution is finally multiplied by $(-1)^{l}$ with $l$ the number of loops in the diagram.
 
 The linked-cluster theorem asserts that
 \begin{equation}
@@ -208,9 +235,9 @@ In the special case where the capacitive coupling acts on a single site of the r
 \end{equation}
 
 
-\subsubsection{Numerical solution}
+\section{Numerical solution}
 
-\paragraph{Piece-wise Linear Approximation (``trapz" in the code)}
+\subsection{Piece-wise Linear Approximation (``trapz" in the code)}
 
 We want to solve Eq.~\eqref{eq:quasi_Dyson} at fixed $n$. We start by renaming $\varphi_t(u, j; t, n) \rightarrow f_j(u)$.
 We approximate $f$, $g^<$ and $g^>$ by piece-wise linear functions, defined by their values on a regular time grid $u_i = i \dd{t}$ with $t = N \dd{t}$ and $N$ the number of intervals.
@@ -260,7 +287,7 @@ In the general case, we have:
 \end{equation}
 which is a linear problem where the linear operator is ``almost Toeplitz" by block (but not close to being Toeplitz itself).
 
-\paragraph{General scheme}
+\subsection{General scheme}
 
 We focus on the case where the \ac{QD} is coupled to a single site in the reservoir, i.e. $v_n = \delta_{n,0}$.
 \TODO{Extend to general case}
