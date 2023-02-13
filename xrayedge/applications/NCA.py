@@ -2,9 +2,9 @@ import numpy as np
 from scipy import interpolate, integrate
 from matplotlib import pyplot as plt
 from copy import copy
-import toolbox as tb
 from ..solver import CorrelatorSolver
 import bisect
+from .utils import vcut, autoscale_y
 
 # TODO: test energy shifts
 
@@ -223,7 +223,7 @@ class GFWithTails:
 
         f = self(x + self._en_shift)  # unshift first
 
-        x0, f0 = tb.vcut(
+        x0, f0 = vcut(
             self._omegas,
             self._gf_vals,
             -2 * abs(self._imag_bounds[0]),
@@ -234,7 +234,7 @@ class GFWithTails:
         plt.plot(x0, -f0.imag, label="original data")
         # plt.xlim(*plt.xlim())  # freeze xlim
         plt.semilogy()
-        # tb.autoscale_y(logscale=True)
+        # autoscale_y(logscale=True)
 
         plt.plot(x, -f.imag, "--", label="extrapolation")
 
@@ -255,7 +255,7 @@ class GFWithTails:
 
             # plt.xlim(*plt.xlim())  # freeze xlim
             plt.semilogy()
-            # tb.autoscale_y(logscale=True)
+            # autoscale_y(logscale=True)
 
             plt.plot(x, np.imag(1.0 / f), "--")
 
@@ -269,7 +269,7 @@ class GFWithTails:
             )
             f = self(x + self._en_shift)  # unshift first
 
-            x0, f0 = tb.vcut(
+            x0, f0 = vcut(
                 self._omegas,
                 self._gf_vals,
                 -10 * abs(self._real_bounds[0]),
@@ -280,7 +280,7 @@ class GFWithTails:
             plt.plot(x0, f0.real, label="original data")
 
             plt.loglog()
-            tb.autoscale_y(logscale=True)
+            autoscale_y(logscale=True)
 
             plt.axvline(self._real_bounds[1], c="k", ls=":", alpha=0.4)
             plt.legend()
@@ -291,7 +291,7 @@ class GFWithTails:
             plt.plot(-x0, -f0.real, label="original data")
 
             plt.loglog()
-            tb.autoscale_y(logscale=True)
+            autoscale_y(logscale=True)
 
             plt.axvline(-self._real_bounds[0], c="k", ls=":", alpha=0.4)
             plt.legend()

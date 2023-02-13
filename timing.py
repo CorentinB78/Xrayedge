@@ -4,7 +4,6 @@ Little script to time execution.
 import numpy as np
 from matplotlib import pyplot as plt
 import xrayedge as xray
-import toolbox as tb
 import time
 import cProfile
 
@@ -22,23 +21,24 @@ AP = xray.AccuracyParameters(
     method="trapz-GMRES",
     qdyson_atol=1e-4,
     qdyson_min_step=0.1,
-    parallelize_orbitals=False,
+    parallelize_orbitals=True,
 )
 
 qpc = xray.ExtendedQPC(PP, int(1e4), 100.0)
+qpc.verbose = True
 solver = xray.CorrelatorSolver(qpc, PP.orbitals, PP.couplings, AP)
 solver.verbose = True
 
 start = time.time()
-start_full = time.process_time()
+# start_full = time.process_time()
 
 # cProfile.run("solver.compute_C(type=0, Q=0, force_recompute=True)")
 err = solver.compute_C(type=0, Q=0, force_recompute=True)
 
-full_run_time = time.process_time() - start_full
+# full_run_time = time.process_time() - start_full
 run_time = time.time() - start
 
-print(f"full run time: {full_run_time} s")
+# print(f"full run time: {full_run_time} s")
 print(f"run time: {run_time} s")
 print()
 print(f"Error: {err}")

@@ -2,7 +2,6 @@ import unittest
 import numpy as np
 from numpy import testing
 import xrayedge as xray
-import toolbox as tb
 from copy import copy
 
 
@@ -110,7 +109,7 @@ class TestAPlusReta(unittest.TestCase):
 
         freqs, A_reta_w, en_shift = CS.A_plus_reta_w(0, 10000)
 
-        times, A_time = tb.inv_fourier_transform(freqs + en_shift, A_reta_w)
+        times, A_time = xray.fourier.inv_fourier_transform(freqs + en_shift, A_reta_w)
         mask = times > times[-1] / 10.0  # avoid region with Gibbs phenomenon
 
         testing.assert_allclose(

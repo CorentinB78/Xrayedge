@@ -1,12 +1,12 @@
 import numpy as np
 from scipy import interpolate
-import toolbox as tb
 from copy import copy
 from .integral_solvers import solve_quasi_dyson_adapt, cum_int_adapt_simpson
 import matplotlib
 import matplotlib.pyplot as plt
 import functools
 import multiprocessing
+from .fourier import fourier_transform
 
 
 # TODO cleanup notes!
@@ -162,6 +162,36 @@ def _run(j, self, sign, Q):
     return times, C_vals, err
 
 
+def symmetrize(coord, values, center, function=None, axis=-1, snap=1e-10):
+    coord_out = np.asarray(coord).copy()
+    values_out = np.moveaxis(np.asarray(values).copy(), axis, -1)
+
+    if len(coord_out) != values_out.shape[-1]:
+        raise ValueError("This axis does not match the number of coordinates!")
+
+    snap = np.abs(snap)
+    s = slice(None, None, -1)
+    if function is None:
+        function = lambda x: x
+    if coord_out[0] + snap < center < coord_out[-1] - snap:
+        raise ValueError("center is within the coordinate range")
+    elif center <= coord_out[0] + snap:
+        if np.abs(center - coord_out[0]) <= snap:
+            s = slice(None, 0, -1)
+
+        coord_out = np.concatenate((-coord_out[s] + 2 * center, coord_out))
+        values_out = np.concatenate((function(values_out[..., s]), values_out), axis=-1)
+
+    elif center >= coord_out[-1] - snap:
+        if np.abs(center - coord_out[-1]) <= snap:
+            s = slice(-2, None, -1)
+
+        coord_out = np.concatenate((coord_out, -coord_out[s] + 2 * center))
+        values_out = np.concatenate((values_out, function(values_out[..., s])), axis=-1)
+
+    return coord_out, np.moveaxis(values_out, -1, axis)
+
+
 class CorrelatorSolver:
     """
     Solver for computing correlation functions in a finite system capacitively coupled to a reservoir.
@@ -225,7 +255,7 @@ class CorrelatorSolver:
         A_bulk -= np.exp(intercept + times * slope.real)
 
         A_bulk[0] *= 0.5
-        w, A_w = tb.fourier_transform(times, A_bulk)
+        w, A_w = fourier_transform(times, A_bulk)
 
         A_w += -np.exp(intercept) / (1j * w + slope.real)
 
@@ -313,7 +343,7 @@ class CorrelatorSolver:
 
             C_interp_list.append(
                 interpolate.CubicSpline(
-                    *tb.symmetrize(times, C_vals, 0.0, lambda x: np.conj(x)),
+                    *symmetrize(times, C_vals, 0.0, lambda x: np.conj(x)),
                     bc_type="natural",
                     extrapolate=False,
                 )

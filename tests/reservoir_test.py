@@ -3,7 +3,6 @@ import numpy as np
 from numpy import testing
 from xrayedge import PhysicsParameters
 from xrayedge import reservoir
-import toolbox as tb
 import matplotlib.pyplot as plt
 from scipy import integrate
 
@@ -44,7 +43,7 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
         w = np.linspace(-50, 50, 1000)
         gf_less = self.res.g_less(w, Q=0)[:, 0, 0]
 
-        f_ref = 0.5 * (tb.fermi(w, 0.25, 1.0) + tb.fermi(w, -0.25, 1.0))
+        f_ref = 0.5 * (reservoir.fermi(w, 0.25, 1.0) + reservoir.fermi(w, -0.25, 1.0))
         gf_less_ref = -2.0j * f_ref * np.imag(1.0 / (w + 2.0 + 10.0j))
 
         testing.assert_allclose(gf_less, gf_less_ref, atol=1e-5)
@@ -54,7 +53,7 @@ class TestQuantumDotFrequencyDomain(unittest.TestCase):
         Q = 0.5
         gf_less = self.res.g_less(w, Q=Q)[:, 0, 0]
 
-        f_ref = 0.5 * (tb.fermi(w, 0.25, 1.0) + tb.fermi(w, -0.25, 1.0))
+        f_ref = 0.5 * (reservoir.fermi(w, 0.25, 1.0) + reservoir.fermi(w, -0.25, 1.0))
         gf_less_ref = -2.0j * f_ref * np.imag(1.0 / (w + 2.0 - 1.2 * Q + 10.0j))
 
         testing.assert_allclose(gf_less, gf_less_ref, atol=1e-5)

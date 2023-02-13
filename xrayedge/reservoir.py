@@ -1,8 +1,45 @@
-import toolbox as tb
 import numpy as np
 from scipy import interpolate, integrate
 from copy import copy
 from functools import lru_cache
+from .fourier import inv_fourier_transform
+
+
+def fermi(omegas, mu, beta):
+    """
+    Fermi function
+
+    1 / (1 + e^{-beta (omegas - mu)})
+
+    Entirely vectorized, supports infinite beta.
+    """
+    x = beta * (omegas - mu)
+    ### for case beta=inf and omega=mu:
+    x = np.nan_to_num(x, copy=False, nan=-1.0, posinf=+np.inf, neginf=-np.inf)
+    return 0.5 * (1.0 + np.tanh(-x * 0.5))
+
+
+def semicirc_retarded_gf(hopping):
+    """
+    Creates a callable Green function with semi-circular density of states.
+
+    Arguments:
+        hopping -- float
+
+    Returns:
+        vectorized callable z -> G(z), with z potenitally complex
+    """
+    g = abs(hopping)
+
+    def gf(w):
+        if np.real(w) <= -2 * g:
+            return (w + np.sqrt(w**2 - 4 * g**2)) / (2 * g**2)
+        elif abs(np.real(w)) < 2 * g:
+            return (w - 1j * np.sqrt(4 * g**2 - w**2)) / (2 * g**2)
+        else:
+            return (w - np.sqrt(w**2 - 4 * g**2)) / (2 * g**2)
+
+    return np.vectorize(gf, otypes=[complex])
 
 
 class Reservoir:
@@ -112,7 +149,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
         w_array = np.atleast_1d(w_array)
         return (
             -2j
-            * (2 * tb.fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
+            * (2 * fermi(w_array, 0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
             * np.imag(self.delta_leads_R_left(w_array))
         )
 
@@ -123,17 +160,17 @@ class OneDChainBetweenTwoLeads(Reservoir):
         w_array = np.atleast_1d(w_array)
         return (
             -2j
-            * (2 * tb.fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
+            * (2 * fermi(w_array, -0.5 * self.PP.bias_res, self.PP.beta) - 1.0)
             * np.imag(self.delta_leads_R_right(w_array))
         )
 
     def delta_less_center(self, w_array):
         w_array = np.atleast_1d(w_array)
-        return 2j * self.PP.eta_res * tb.fermi(w_array, 0.0, self.PP.beta)
+        return 2j * self.PP.eta_res * fermi(w_array, 0.0, self.PP.beta)
 
     def delta_grea_center(self, w_array):
         w_array = np.atleast_1d(w_array)
-        return -2j * self.PP.eta_res * tb.fermi(w_array, 0.0, -self.PP.beta)
+        return -2j * self.PP.eta_res * fermi(w_array, 0.0, -self.PP.beta)
 
     def g_reta(self, w_array, Q):
         """
@@ -221,7 +258,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
         g_less = self.g_less(w, Q=Q)
 
-        times, g_less_t = tb.inv_fourier_transform(w, g_less, axis=0)
+        times, g_less_t = inv_fourier_transform(w, g_less, axis=0)
         return times, g_less_t
 
     @lru_cache
@@ -239,7 +276,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
         w = np.linspace(-self.w_max, self.w_max, self.N_fft)
         g_grea = self.g_grea(w, Q=Q)
 
-        times, g_grea_t = tb.inv_fourier_transform(w, g_grea, axis=0)
+        times, g_grea_t = inv_fourier_transform(w, g_grea, axis=0)
         return times, g_grea_t
 
     def occupation(self, Q):
@@ -322,7 +359,7 @@ class QPC(OneDChainBetweenTwoLeads):
         """
         w_array = np.atleast_1d(w_array)
         t = self.PP.D_res / 2.0  # hopping
-        sc_gf = tb.semicirc_retarded_gf(t)
+        sc_gf = semicirc_retarded_gf(t)
         return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
 
     def delta_leads_R_right(self, w_array):
@@ -331,7 +368,7 @@ class QPC(OneDChainBetweenTwoLeads):
         """
         w_array = np.atleast_1d(w_array)
         t = self.PP.D_res / 2.0  # hopping
-        sc_gf = tb.semicirc_retarded_gf(t)
+        sc_gf = semicirc_retarded_gf(t)
         return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
 
 
@@ -367,7 +404,7 @@ class ExtendedQPC(OneDChainBetweenTwoLeads):
         """
         w_array = np.atleast_1d(w_array)
         t = self.PP.D_res / 2.0  # hopping
-        sc_gf = tb.semicirc_retarded_gf(t)
+        sc_gf = semicirc_retarded_gf(t)
         return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
 
     def delta_leads_R_right(self, w_array):
@@ -376,5 +413,5 @@ class ExtendedQPC(OneDChainBetweenTwoLeads):
         """
         w_array = np.atleast_1d(w_array)
         t = self.PP.D_res / 2.0  # hopping
-        sc_gf = tb.semicirc_retarded_gf(t)
+        sc_gf = semicirc_retarded_gf(t)
         return t**2 * sc_gf(w_array + self.PP.mu_res - 2.0 * t + self.PP.eta_res * 1j)
