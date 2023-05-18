@@ -202,6 +202,9 @@ def solve_quasi_dyson(
         gg = g_grea(orb, orb)(t_array) * V * t
         gl = g_less(orb, orb)(-t_array) * V * t
 
+        if not(np.isfinite(gg).all() and np.isfinite(gl).all()):
+            raise RuntimeError("g_grea or g_less returned values are not all finite")
+
         mat_M = np.empty((N, N), dtype=complex)
         for m in range(N):
             for n in range(N):
@@ -224,6 +227,9 @@ def solve_quasi_dyson(
 
                 gg = g_grea(orb_a, orb_b)(t_array) * couplings[k] * delta / 6.0
                 gl = g_less(orb_a, orb_b)(-t_array) * couplings[k] * delta / 6.0
+
+                if not(np.isfinite(gg).all() and np.isfinite(gl).all()):
+                    raise RuntimeError("g_grea or g_less returned values are not all finite")
 
                 r = np.empty(N, dtype=complex)
                 c = np.empty(N, dtype=complex)

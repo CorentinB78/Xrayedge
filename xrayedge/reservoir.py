@@ -259,6 +259,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
         g_less = self.g_less(w, Q=Q)
 
         times, g_less_t = inv_fourier_transform(w, g_less, axis=0)
+        assert np.isfinite(g_less_t).all()
         return times, g_less_t
 
     @lru_cache
@@ -277,6 +278,7 @@ class OneDChainBetweenTwoLeads(Reservoir):
         g_grea = self.g_grea(w, Q=Q)
 
         times, g_grea_t = inv_fourier_transform(w, g_grea, axis=0)
+        assert np.isfinite(g_grea_t).all()
         return times, g_grea_t
 
     def occupation(self, Q):
